@@ -16,7 +16,7 @@ var Game = Events.extend(function(base) {
       this.vehicle = new CrewDragonVehicle(this);
       this.scene.add_vehicle(this.vehicle);
 
-      this.input = new Input(this);
+      this.input = new UserInput(this);
       
       this.bind('resize', with_scope(this, this.resize));
       
@@ -47,9 +47,9 @@ var Game = Events.extend(function(base) {
       
       this.input.apply_vehicle(this.vehicle);
 
-      this.vehicle.pre_physics(this.scene);
+      this.vehicle.pre_physics(elapsed);
       this.scene.world.tick(elapsed);
-      this.vehicle.post_physics(this.scene);
+      this.vehicle.post_physics(elapsed);
 
       this.scene.renderer.clear();
 

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="128"
+   height="256"
+   viewBox="0 0 128.0000009922396 256.0000053719148"
+   id="svg4290"
+   version="1.1"
+   inkscape:version="0.91 r13725"
+   sodipodi:docname="landing-legs.svg"
+   inkscape:export-filename="/home/zlsa/projects/online/dragon-lander/images/crew-dragon/landing-legs.png"
+   inkscape:export-xdpi="180"
+   inkscape:export-ydpi="180">
+  <defs
+     id="defs4292" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#b9b9b9"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="1"
+     inkscape:cx="60.34306192521115"
+     inkscape:cy="194.1351111237925"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     inkscape:snap-center="true"
+     units="px"
+     inkscape:window-width="1600"
+     inkscape:window-height="859"
+     inkscape:window-x="0"
+     inkscape:window-y="20"
+     inkscape:window-maximized="0"
+     inkscape:object-nodes="true"
+     inkscape:snap-smooth-nodes="true"
+     showguides="true"
+     inkscape:guide-bbox="true"
+     height="256px">
+    <inkscape:grid
+       type="xygrid"
+       id="grid4315" />
+    <sodipodi:guide
+       position="64.0000004961198,-48.00000100723403"
+       orientation="1,0"
+       id="guide4679" />
+    <sodipodi:guide
+       position="128.0000009922396,64.00000134297871"
+       orientation="0,1"
+       id="guide4681" />
+    <sodipodi:guide
+       position="256.0000019844792,192.0000040289361"
+       orientation="0,1"
+       id="guide6055" />
+  </sodipodi:namedview>
+  <metadata
+     id="metadata4295">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(0,-796.3621605099649)">
+    <path
+       sodipodi:nodetypes="ccccssssccccc"
+       inkscape:connector-curvature="0"
+       id="path6147"
+       d="m 55,864.3621605099649 0,7.9999999999999 -1,0 -1,0 0,1 c 0,0.55399 0.44601,1 1,1 l 4,0 c 0.55399,0 1,-0.44601 1,-1 l 0,-1 -1,0 -1,0 0,-7.9999999999999 z"
+       style="opacity:1;fill:#404040;fill-opacity:1;fill-rule:nonzero;stroke:#ffffff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+    <path
+       sodipodi:nodetypes="ccccssssccccc"
+       inkscape:connector-curvature="0"
+       style="opacity:1;fill:#404040;fill-opacity:1;fill-rule:nonzero;stroke:#ffffff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       d="m 70.99999999999998,864.3621605099649 0,7.9999999999999 -1,0 -1,0 0,1 c 0,0.55399 0.44601,1 1,1 l 4,0 c 0.55399,0 1,-0.44601 1,-1 l 0,-1 -1,0 -1,0 0,-7.9999999999999 z"
+       id="path6149" />
+    <path
+       style="opacity:1;fill:#404040;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       d="m 55,864.3621605099649 0,7.9999999999999 -1,0 -1,0 0,1 c 0,0.55399 0.44601,1 1,1 l 4,0 c 0.55399,0 1,-0.44601 1,-1 l 0,-1 -1,0 -1,0 0,-7.9999999999999 z"
+       id="rect5756"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="ccccssssccccc" />
+    <path
+       id="path5768"
+       d="m 70.99999999999998,864.3621605099649 0,7.9999999999999 -1,0 -1,0 0,1 c 0,0.55399 0.44601,1 1,1 l 4,0 c 0.55399,0 1,-0.44601 1,-1 l 0,-1 -1,0 -1,0 0,-7.9999999999999 z"
+       style="opacity:1;fill:#404040;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="ccccssssccccc" />
+  </g>
+</svg>

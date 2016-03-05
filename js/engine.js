@@ -8,10 +8,16 @@
 var Engine = Events.extend(function(base) {
   return {
 
-    init: function(game, position) {
-      this.game = game;
+    init: function(vehicle, tank, position) {
+      this.vehicle = vehicle;
 
       this.position = this.position || position || [0, 0];
+
+      this.tank = tank;
+      
+      this.throttle_command = 0;
+      this.gimbal_command = 0;
+
       this.throttle = 0;
       this.gimbal = 0;
 
@@ -19,15 +25,35 @@ var Engine = Events.extend(function(base) {
     },
 
     set_gimbal: function(gimbal) {
-      this.gimbal = clamp(-1, gimbal, 1);
+      this.gimbal_command = clamp(-1, gimbal, 1);
     },
 
     set_throttle: function(throttle) {
-      this.throttle = clamp(0, throttle, 1);
+      this.throttle_command = clamp(0, throttle, 1);
     },
 
     get_force: function() {
-      return [[0, this.throttle * this.performance.thrust], this.position];
+      return [[0, this.get_thrust()], this.position];
+    },
+
+    get_thrust: function() {
+      return this.throttle * this.performance.thrust;
+    },
+
+    get_max_thrust: function() {
+      return this.performance.thrust;
+    },
+
+    get_fuel_flow: function() {
+      return this.get_thrust() / (9.81 * this.performance.isp) * 2;
+    },
+
+    tick: function(elapsed) {
+      this.throttle += (this.throttle_command - this.throttle) / (this.performance.throttle_response / elapsed);
+      
+      if(this.tank.is_empty()) this.throttle = 0;
+      
+      this.tank.add_fuel_flow(-this.get_fuel_flow());
     }
 
   };
@@ -36,12 +62,13 @@ var Engine = Events.extend(function(base) {
 var SuperDracoPod = Engine.extend(function(base) {
   return {
 
-    init: function(game, position) {
+    init: function() {
       base.init.apply(this, arguments);
 
       this.performance = {
-        thrust: 68170 * 2,
-        isp: 240
+        thrust: 68170 * 4,
+        isp: 240,
+        throttle_response: 0.05
       };
     }
 
@@ -51,12 +78,12 @@ var SuperDracoPod = Engine.extend(function(base) {
 var CrewDragonEngine = Engine.extend(function(base) {
   return {
 
-    init: function(vehicle) {
+    init: function(vehicle, tank) {
       base.init.apply(this, arguments);
 
       this.pods = [
-        new SuperDracoPod(vehicle, [-1.5, 0]),
-        new SuperDracoPod(vehicle, [1.5, 0])
+        new SuperDracoPod(vehicle, tank, [-1.5, 0]),
+        new SuperDracoPod(vehicle, tank, [1.5, 0])
       ];
       
     },
@@ -64,11 +91,11 @@ var CrewDragonEngine = Engine.extend(function(base) {
     update_pods: function() {
       var throttle = [0, 0];
 
-      throttle[0] = this.throttle;
-      throttle[1] = this.throttle;
+      throttle[0] = this.throttle_command;
+      throttle[1] = this.throttle_command;
 
-      throttle[0] += this.gimbal;
-      throttle[1] -= this.gimbal;
+      throttle[0] += this.gimbal_command;
+      throttle[1] -= this.gimbal_command;
       
       this.pods[0].set_throttle(throttle[0]);
       this.pods[1].set_throttle(throttle[1]);
@@ -86,7 +113,20 @@ var CrewDragonEngine = Engine.extend(function(base) {
 
     get_forces: function() {
       return [this.pods[0].get_force(), this.pods[1].get_force()];
-    }
+    },
     
+    get_thrust: function() {
+      return this.pods[0].get_thrust() + this.pods[1].get_thrust();
+    },
+
+    get_max_thrust: function() {
+      return this.pods[0].get_max_thrust() + this.pods[1].get_max_thrust();
+    },
+
+    tick: function(elapsed) {
+      this.pods[0].tick(elapsed);
+      this.pods[1].tick(elapsed);
+    }
+
   };
 });

@@ -43,25 +43,50 @@ var Input = Events.extend(function(base) {
       this.throttle = 0;
       this.gimbal = 0;
 
-      this.keys = {};
+      this.gear = null;
+
+      this.reset = false;
 
       base.init.apply(this, arguments);
+    },
+
+    apply_vehicle: function(vehicle) {
+      if(this.gear == null) {
+        this.gear = vehicle.gear_get();
+      }
+      vehicle.gear_set(this.gear);
+      vehicle.set_throttle(this.throttle);
+      vehicle.set_gimbal(this.gimbal);
+
+      if(this.reset) {
+        vehicle.reset();
+        this.reset = false;
+      }
+      
+    },
+
+  };
+});
+
+var UserInput = Input.extend(function(base) {
+  return {
+
+    init: function(game, position) {
+      base.init.apply(this, arguments);
+
+      this.keys = {};
 
       $(window).keydown(with_scope(this, this.keydown));
       $(window).keyup(with_scope(this, this.keyup));
     },
 
     keydown: function(e) {
-      this.keys[e.which] = true;
+      if(!(e.which in this.keys)) this.keys[e.which] = 0;
+      this.keys[e.which] += 1;
     },
 
     keyup: function(e) {
-      this.keys[e.which] = false;
-    },
-
-    apply_vehicle: function(vehicle) {
-      vehicle.set_throttle(this.throttle);
-      vehicle.set_gimbal(this.gimbal);
+      this.keys[e.which] = 0;
     },
 
     get_key: function(k) {
@@ -69,16 +94,24 @@ var Input = Events.extend(function(base) {
 
       for(var i=0; i<k.length; i++) {
         if(!(k[i] in this.keys)) continue;
-        if(this.keys[k[i]]) return true;
+        if(this.keys[k[i]]) return this.keys[k[i]];
       }
       
       return false;
     },
 
     tick: function(elapsed) {
-      var throttle = [0.5, 0.3];
-      var gimbal = 0.1;
+      var throttle = [0.8, 1.2];
+      var gimbal = 0.3;
 
+      if(this.get_key(K.G) == 1) {
+        this.gear = !this.gear;
+      }
+         
+      if(this.get_key(K.R) == 1) {
+        this.reset = true;
+      }
+      
       if(this.get_key([K.UP, K.SHIFT])) {
         this.throttle += elapsed * (1 / throttle[0]);
       } else if(this.get_key([K.DOWN, K.CONTROL])) {
@@ -103,6 +136,12 @@ var Input = Events.extend(function(base) {
         
       this.throttle = clamp(0, this.throttle, 1);
       this.gimbal = clamp(-1, this.gimbal, 1);
+      
+      for(var i in this.keys) {
+        if(this.keys[i])
+          this.keys[i] += 1;
+      }
+
     }
 
   };

@@ -34,7 +34,7 @@ function done() {
 }
 
 function tick() {
-  var now = time();
+  var now = new Date().getTime() * 0.001;
   var elapsed = 0;
   
   if(last_tick != 0)

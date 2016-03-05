@@ -13,12 +13,22 @@ var World = Events.extend(function(base) {
       });
 
       this.init_ground();
+
+      this.world.setGlobalStiffness(1000000000);
+      this.world.setGlobalRelaxation(5);
       
       base.init.apply(this, arguments);
     },
 
     get_altitude: function(x) {
-      return -5;
+      return 0;
+    },
+
+    get_pressure: function(pos) {
+      var scale_height = 7000;
+      var sea_level_pressure = 1.22;
+
+      return Math.pow(sea_level_pressure, -(pos[1] / scale_height)) * 1.22;
     },
 
     init_ground: function() {
@@ -38,7 +48,10 @@ var World = Events.extend(function(base) {
     },
 
     tick: function(elapsed) {
-      this.world.step(elapsed);
+      var substeps = 1;
+
+      for(var i=0; i<substeps; i++)
+        this.world.step(elapsed/substeps);
     }
     
   };
