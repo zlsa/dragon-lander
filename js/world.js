@@ -48,10 +48,7 @@ var World = Events.extend(function(base) {
     },
 
     tick: function(elapsed) {
-      var substeps = 1;
-
-      for(var i=0; i<substeps; i++)
-        this.world.step(elapsed/substeps);
+      this.world.step(elapsed);
     }
     
   };

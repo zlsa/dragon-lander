@@ -29,7 +29,13 @@ var Vehicle = Events.extend(function(base) {
       this.velocity = [0, 0];
       this.last_velocity = [0, 0];
 
+      this.track = [];
+      
+      this.last_track = 0;
+
       base.init.apply(this, arguments);
+
+      setTimeout(with_scope(this, this.reset), 0);
     },
 
     reset: function() {
@@ -47,7 +53,13 @@ var Vehicle = Events.extend(function(base) {
       this.body.angularVelocity = 0;
 
       this.peak_acceleration = [0, 0];
+
+      this.tank.reset();
       
+      this.track = [];
+      
+      this.last_track = 0;
+
       if(altitude)
         this.body.velocity[1] = -this.get_terminal_velocity(altitude);
 
@@ -64,8 +76,6 @@ var Vehicle = Events.extend(function(base) {
         damping: 0.0,
         angularDamping: 0.05
       });
-
-      this.reset();
     },
 
     get_terminal_velocity: function(altitude) {
@@ -79,6 +89,10 @@ var Vehicle = Events.extend(function(base) {
 
     get_position: function() {
       return this.body.position;
+    },
+
+    get_altitude: function() {
+      return this.get_position()[1];
     },
 
     get_velocity: function() {
@@ -132,6 +146,27 @@ var Vehicle = Events.extend(function(base) {
 
       if(distance_2d(this.acceleration) > distance_2d(this.peak_acceleration) && this.time > 1)
         this.peak_acceleration = this.acceleration;
+
+      if(time_difference(this.time, this.last_track) > 0) {
+        var p = this.get_position();
+
+        var ltd = 10000;
+        
+        if(this.track.length) {
+          ltd = distance_2d([
+            this.track[this.track.length-1][0] - p[0],
+            this.track[this.track.length-1][1] - p[1]
+          ]);
+        }
+
+        if(ltd > 0.2) {
+          this.track.push([
+            p[0],
+            p[1]
+          ]);
+          this.last_track = this.time;
+        }
+      }
     }
   };
 });
@@ -198,9 +233,38 @@ var CrewDragonVehicle = Vehicle.extend(function(base) {
       ]);
     },
 
+    draw_track: function(scene) {
+      var r = scene.renderer;
+      var cc = scene.renderer.context;
+      
+      cc.beginPath();
+      
+      for(var i=0; i<this.track.length; i++) {
+        var p = [
+          r.m_to_px(this.track[i][0]),
+          -r.m_to_px(this.track[i][1]),
+        ];
+
+        if(i == 0)
+          cc.moveTo(p[0], p[1]);
+        else
+          cc.lineTo(p[0], p[1]);
+      }
+
+      cc.strokeStyle = '#fff';
+      cc.lineWidth = 4;
+      cc.stroke();
+      
+      cc.strokeStyle = BLACK;
+      cc.lineWidth = 2;
+      cc.stroke();
+    },
+    
     draw: function(scene) {
       var r = scene.renderer;
       var rcc = scene.renderer.context;
+
+      this.draw_track(scene);
 
       rcc.save();
 
@@ -320,7 +384,7 @@ var CrewDragonVehicle = Vehicle.extend(function(base) {
       var forces = this.engine.get_forces();
 
       this.engine.set_throttle(this.throttle);
-      this.engine.set_gimbal(this.gimbal * 0.2);
+      this.engine.set_gimbal(this.gimbal);
 
       this.engine.tick(elapsed);
       this.tank.tick(elapsed);

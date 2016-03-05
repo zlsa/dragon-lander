@@ -222,7 +222,7 @@ var Renderer = Events.extend(function(base) {
         cc.globalAlpha = 1;
 
         var values = [];
-        var debug = false;
+        var debug = true;
 
         values.push([
           'ATM',
@@ -244,6 +244,11 @@ var Renderer = Events.extend(function(base) {
         values.push([
           'ALTITUDE',
           distance_str(target.get_position()[1])
+        ]);
+
+        values.push([
+          'RANGE',
+          distance_str(target.get_position()[0])
         ]);
 
         values.push([
@@ -280,6 +285,11 @@ var Renderer = Events.extend(function(base) {
           values.push([
             'VELOCITY',
             rnd(target.get_speed()) + 'm/s'
+          ]);
+          
+          values.push([
+            'AUTOPILOT',
+            rnd(this.game.autopilot.value, 2) + ''
           ]);
         }
 

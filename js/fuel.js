@@ -17,6 +17,11 @@ var FuelTank = Events.extend(function(base) {
       base.init.apply(this, arguments);
     },
 
+    reset: function() {
+      this.flow = 0;
+      this.amount = this.capacity;
+    },
+
     is_empty: function() {
       return this.amount < 0.01;
     },

@@ -45,25 +45,19 @@ var Input = Events.extend(function(base) {
 
       this.gear = null;
 
-      this.reset = false;
-
       base.init.apply(this, arguments);
     },
 
     apply_vehicle: function(vehicle) {
+      
       if(this.gear == null) {
         this.gear = vehicle.gear_get();
       }
+      
       vehicle.gear_set(this.gear);
       vehicle.set_throttle(this.throttle);
       vehicle.set_gimbal(this.gimbal);
-
-      if(this.reset) {
-        vehicle.reset();
-        this.reset = false;
-      }
-      
-    },
+    }
 
   };
 });
@@ -76,8 +70,18 @@ var UserInput = Input.extend(function(base) {
 
       this.keys = {};
 
+      this.autopilot = false;
+
+      this.reset = false;
+
       $(window).keydown(with_scope(this, this.keydown));
       $(window).keyup(with_scope(this, this.keyup));
+    },
+
+    apply_vehicle: function(vehicle) {
+      base.apply_vehicle.apply(this, arguments);
+      
+      vehicle.set_gimbal(this.gimbal * 0.1);
     },
 
     keydown: function(e) {
@@ -111,7 +115,11 @@ var UserInput = Input.extend(function(base) {
       if(this.get_key(K.R) == 1) {
         this.reset = true;
       }
-      
+
+      if(this.get_key(K.A) == 1) {
+        this.autopilot = !this.autopilot;
+      }
+
       if(this.get_key([K.UP, K.SHIFT])) {
         this.throttle += elapsed * (1 / throttle[0]);
       } else if(this.get_key([K.DOWN, K.CONTROL])) {
@@ -142,6 +150,15 @@ var UserInput = Input.extend(function(base) {
           this.keys[i] += 1;
       }
 
+      if(this.reset) {
+        this.game.reset();
+        this.reset = false;
+
+        this.throttle = 0;
+        this.gimbal = 0;
+        this.gear = null;
+      }
+      
     }
 
   };
