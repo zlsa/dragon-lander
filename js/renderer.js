@@ -37,18 +37,24 @@ var Renderer = Events.extend(function(base) {
       cc.restore();
       cc.save();
 
-      cc.fillStyle = '#fed';
+      var target_pos = [0, 0];
+      if(this.game.get_target()) {
+        target_pos = this.game.get_target().get_position();
+      }
+
+      var rgb = this.scene.world.get_sky_color(target_pos);
+      
+      for(var i=0; i<rgb.length; i++) {
+        rgb[i] = rnd(rgb[i]);
+      }
+
+      cc.fillStyle = 'rgb(' + rgb.join(',') + ')';
       cc.fillRect(0, 0, this.size[0], this.size[1]);
       
       cc.translate(
         rnd(this.size[0] * 0.5),
         rnd(this.size[1] * 0.5)
       );
-
-      var target_pos = [0, 0];
-      if(this.game.get_target()) {
-        target_pos = this.game.get_target().get_position();
-      }
 
       cc.scale(this.zoom, this.zoom);
 
@@ -60,7 +66,7 @@ var Renderer = Events.extend(function(base) {
       cc.lineTo(this.size[0], this.size[1]);
       cc.lineTo(-this.size[0], this.size[1]);
 
-      cc.fillStyle = '#fa9';
+      cc.fillStyle = '#8d8';
       cc.fill();
       
       
@@ -216,7 +222,7 @@ var Renderer = Events.extend(function(base) {
       var target = this.game.get_target();
 
       if(target) {
-        this.draw_hud_speed(target);
+//        this.draw_hud_speed(target);
         cc.globalAlpha = 1;
         this.draw_hud_acceleration(target);
         cc.globalAlpha = 1;
@@ -256,8 +262,8 @@ var Renderer = Events.extend(function(base) {
           target.engine.throttle_command
         ]);
 
-        var twr = target.engine.get_thrust() / target.get_mass() / 9.81; 
-        var peak_twr = target.engine.get_max_thrust() / target.get_mass() / 9.81; 
+        var twr = target.get_twr(); 
+        var peak_twr = target.get_twr(true);
 
         values.push([
           'TWR',
@@ -288,9 +294,10 @@ var Renderer = Events.extend(function(base) {
           ]);
           
           values.push([
-            'AUTOPILOT',
-            rnd(this.game.autopilot.value, 2) + ''
+            'AP STATE',
+            target.autopilot.value
           ]);
+          
         }
 
         var size = [128, 12];

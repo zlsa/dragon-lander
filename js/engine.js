@@ -68,7 +68,7 @@ var SuperDracoPod = Engine.extend(function(base) {
       this.performance = {
         thrust: 68170 * 4,
         isp: 240,
-        throttle_response: 0.05
+        throttle_response: 0.01
       };
     }
 

@@ -2,9 +2,13 @@
 var Vehicle = Events.extend(function(base) {
   return {
 
-    init: function(game) {
+    init: function(game, autopilot) {
       this.game = game;
       this.world = game.scene.world;
+      
+      this.autopilot = autopilot;
+
+      if(autopilot) autopilot.vehicle = this;
 
       this.image_size = this.image_size || [128, 128];
       this.image_center = this.image_center || [64, 64];
@@ -15,6 +19,7 @@ var Vehicle = Events.extend(function(base) {
       this.canvas = create_canvas(this.image_size[0] * this.image_factor, this.image_size[1] * this.image_factor);
       this.context = this.canvas.getContext('2d');
 
+      this.last_acceleration = [0, 0];
       this.acceleration = [0, 0];
       this.peak_acceleration = [0, 0];
 
@@ -35,7 +40,7 @@ var Vehicle = Events.extend(function(base) {
 
       base.init.apply(this, arguments);
 
-      setTimeout(with_scope(this, this.reset), 0);
+      this.reset();
     },
 
     reset: function() {
@@ -60,11 +65,29 @@ var Vehicle = Events.extend(function(base) {
       
       this.last_track = 0;
 
-      if(altitude)
-        this.body.velocity[1] = -this.get_terminal_velocity(altitude);
+      if(this.autopilot)
+        this.autopilot.reset();
 
     },
 
+    move_to: function(p) {
+      this.body.position[0] = p[0];
+      this.body.position[1] = Math.max(2.50001, p[1]);
+      
+      this.body.velocity[0] = 0;
+      this.body.velocity[1] = 0;
+      
+      if(p[1])
+        this.body.velocity[1] = -this.get_terminal_velocity(p[1]);
+
+    },
+
+    get_twr: function(max) {
+      var thrust = this.engine.get_thrust();
+      if(max) thrust = this.engine.get_max_thrust();
+      return thrust / this.get_mass() / 9.81;
+    },
+    
     init_body: function() {
 
       var altitude = 0;
@@ -89,6 +112,10 @@ var Vehicle = Events.extend(function(base) {
 
     get_position: function() {
       return this.body.position;
+    },
+
+    get_range: function() {
+      return this.get_position()[0];
     },
 
     get_altitude: function() {
@@ -134,18 +161,31 @@ var Vehicle = Events.extend(function(base) {
 
     pre_physics: function(elapsed) {
       this.last_velocity = [this.body.velocity[0], this.body.velocity[1]];
+      
+      if(this.autopilot && !this.input) {
+        this.autopilot.tick(elapsed);
+        this.autopilot.apply_vehicle(this);
+      } else if(this.input) {
+        this.input.apply_vehicle(this);
+      }
     },
 
     post_physics: function(elapsed) {
       this.velocity = [this.body.velocity[0], this.body.velocity[1]];
+
+      this.last_acceleration = this.acceleration;
 
       this.acceleration = [
         (this.last_velocity[0] - this.velocity[0]) / elapsed,
         (this.last_velocity[1] - this.velocity[1]) / elapsed - this.world.gravity
       ];
 
-      if(distance_2d(this.acceleration) > distance_2d(this.peak_acceleration) && this.time > 1)
-        this.peak_acceleration = this.acceleration;
+      if(distance_2d(this.acceleration) > distance_2d(this.peak_acceleration) && this.time > 1) {
+        var now = distance_2d(this.acceleration);
+        var last = distance_2d(this.last_acceleration);
+        if(now < last * 1.5)
+          this.peak_acceleration = this.acceleration;
+      }
 
       if(time_difference(this.time, this.last_track) > 0) {
         var p = this.get_position();
@@ -196,12 +236,12 @@ var CrewDragonVehicle = Vehicle.extend(function(base) {
         }
       };
 
-      base.init.apply(this, arguments);
-      
       this.gear_deploy();
       
       this.tank = new CrewDragonFuelTank(this);
       this.engine = new CrewDragonEngine(this, this.tank);
+      
+      base.init.apply(this, arguments);
     },
 
     init_shapes: function() {
@@ -234,6 +274,7 @@ var CrewDragonVehicle = Vehicle.extend(function(base) {
     },
 
     draw_track: function(scene) {
+      if(this.game.get_target() != this) return;
       var r = scene.renderer;
       var cc = scene.renderer.context;
       
@@ -255,7 +296,7 @@ var CrewDragonVehicle = Vehicle.extend(function(base) {
       cc.lineWidth = 4;
       cc.stroke();
       
-      cc.strokeStyle = BLACK;
+      cc.strokeStyle = 'rgba(0, 128, 128, 0.5)';
       cc.lineWidth = 2;
       cc.stroke();
     },

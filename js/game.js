@@ -13,15 +13,31 @@ var Game = Events.extend(function(base) {
 
       this.scene = new Scene(this);
 
-      this.vehicle = new CrewDragonVehicle(this);
-      this.scene.add_vehicle(this.vehicle);
+      this.vehicles = [];
 
       this.input = new UserInput(this);
-      this.autopilot = new HoverAutopilotInput(this, this.vehicle);
+
+      this.target = 0;
+
+      var num = 1;
+      for(var i=0; i<num; i++) {
+        var v = new CrewDragonVehicle(this, new LandingAutopilotInput(this));
+        v.extra = i;
+        v.move_to([i * 10, 1000]);
+        this.add_vehicle(v);
+      }
+
+      this.target = Math.floor(this.vehicles.length/2);
 
       this.bind('resize', with_scope(this, this.resize));
       
       this.loader.bind('finished', done);
+    },
+
+    add_vehicle: function(v) {
+      this.vehicles.push(v);
+      
+      this.scene.add_vehicle(v);
     },
 
     get_time: function() {
@@ -32,13 +48,21 @@ var Game = Events.extend(function(base) {
       return this.loader;
     },
 
+    switch_target: function(offset) {
+      this.target -= offset || 1;
+      this.target = clamp(0, this.target, this.vehicles.length-1);
+    },
+
     get_target: function() {
-      return this.vehicle;
+      return this.vehicles[this.target];
     },
 
     reset: function() {
-      this.vehicle.reset();
-      this.autopilot.reset();
+      for(var i=0; i<this.vehicles.length; i++) {
+        this.vehicles[i].reset();
+        this.vehicles[i].move_to([i * 10, 500]);
+      }
+      this.target = Math.floor(this.vehicles.length/2);
     },
 
     tick: function(elapsed) {
@@ -46,30 +70,36 @@ var Game = Events.extend(function(base) {
       this.time += elapsed;
 
       this.input.tick(elapsed);
-      
-      if(!this.input.autopilot) {
-        this.input.apply_vehicle(this.vehicle);
-      }
 
-      var substeps = 2 * this.time_scale;
+      if(elapsed) {
+        var substeps = Math.ceil(3 * this.time_scale);
 
-      for(var i=0; i<substeps; i++) {
+        for(var i=0; i<substeps; i++) {
 
-        var el = elapsed / substeps;
-        
-        if(this.input.autopilot) {
-          this.autopilot.tick(el);
-          this.autopilot.apply_vehicle(this.vehicle);
+          var el = elapsed / substeps;
+          
+          for(var j=0; j<this.vehicles.length; j++) {
+            if(j == this.target && !this.input.autopilot)
+              this.vehicles[j].input = this.input;
+            else
+              this.vehicles[j].input = null;
+            this.vehicles[j].pre_physics(el);
+          }
+          
+          this.scene.world.tick(el);
+          
+          for(j=0; j<this.vehicles.length; j++) {
+            this.vehicles[j].post_physics(el);
+          }
+          
         }
-        
-        this.vehicle.pre_physics(el);
-        this.scene.world.tick(el);
-        this.vehicle.post_physics(el);
       }
 
       this.scene.renderer.clear();
 
-      this.vehicle.draw(this.scene);
+      for(j=0; j<this.vehicles.length; j++) {
+        this.vehicles[j].draw(this.scene);
+      }
       
       this.scene.renderer.draw_hud();
     }

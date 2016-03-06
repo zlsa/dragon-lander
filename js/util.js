@@ -98,9 +98,10 @@ function canvas_clear(cc, size, f) {
 var BLACK = 'rgb(64, 64, 64)';
 
 function distance_str(m) {
-  if(m < 12) {
+  var ma = Math.abs(m);
+  if(ma < 12) {
     return rnd(m * 1000) + 'cm';
-  } else if(m < 1200) {
+  } else if(ma < 1200) {
     return rnd(m) + 'm';
   } else {
     return rnd(m * 0.001, 2) + 'km';

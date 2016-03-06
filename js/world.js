@@ -31,6 +31,16 @@ var World = Events.extend(function(base) {
       return Math.pow(sea_level_pressure, -(pos[1] / scale_height)) * 1.22;
     },
 
+    get_sky_color: function(pos) {
+      var p = this.get_pressure(pos) / 1.22;
+      
+      return [
+        clerp(0.5, p, 1, 0, 230),
+        clerp(0, p, 1, 0, 240),
+        clerp(0, p, 1, 0, 255)
+      ];
+    },
+
     init_ground: function() {
       this.ground = new p2.Body({
         position: [0, this.get_altitude(0)]

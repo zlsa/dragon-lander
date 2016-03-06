@@ -31,7 +31,9 @@ var K = {
   RIGHT: 39,
   DOWN: 40,
   SHIFT: 16,
-  CONTROL: 17
+  CONTROL: 17,
+  LEFT_SQUARE_BRACKET: 219,
+  RIGHT_SQUARE_BRACKET: 221
 };
 
 var Input = Events.extend(function(base) {
@@ -57,6 +59,9 @@ var Input = Events.extend(function(base) {
       vehicle.gear_set(this.gear);
       vehicle.set_throttle(this.throttle);
       vehicle.set_gimbal(this.gimbal);
+    },
+
+    reset: function() {
     }
 
   };
@@ -70,9 +75,11 @@ var UserInput = Input.extend(function(base) {
 
       this.keys = {};
 
-      this.autopilot = false;
+      this.autopilot = true;
 
-      this.reset = false;
+      this.trigger_reset = false;
+
+      this.trigger_switch = 0;
 
       $(window).keydown(with_scope(this, this.keydown));
       $(window).keyup(with_scope(this, this.keyup));
@@ -113,11 +120,17 @@ var UserInput = Input.extend(function(base) {
       }
          
       if(this.get_key(K.R) == 1) {
-        this.reset = true;
+        this.trigger_reset = true;
       }
 
       if(this.get_key(K.A) == 1) {
         this.autopilot = !this.autopilot;
+      }
+
+      if(this.get_key(K.LEFT_SQUARE_BRACKET) == 1) {
+        this.trigger_switch = 1;
+      } else if(this.get_key(K.RIGHT_SQUARE_BRACKET) == 1) {
+        this.trigger_switch = -1;
       }
 
       if(this.get_key([K.UP, K.SHIFT])) {
@@ -150,15 +163,20 @@ var UserInput = Input.extend(function(base) {
           this.keys[i] += 1;
       }
 
-      if(this.reset) {
+      if(this.trigger_switch) {
+        this.game.switch_target(this.trigger_switch);
+        this.trigger_switch = 0;
+      }
+      
+      if(this.trigger_reset) {
         this.game.reset();
-        this.reset = false;
+        this.trigger_reset = false;
 
         this.throttle = 0;
         this.gimbal = 0;
         this.gear = null;
       }
-      
+
     }
 
   };
