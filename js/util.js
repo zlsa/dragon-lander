@@ -239,7 +239,7 @@ function lpad(num, size) {
 }
 
 function time_str(t) {
-  var minutes = rnd(t / 60);
-  var seconds = rnd(t % 60);
+  var seconds = Math.floor(t % 60);
+  var minutes = Math.floor(t / 60);
   return lpad(minutes, 2) + ':' + lpad(seconds, 2);
 }

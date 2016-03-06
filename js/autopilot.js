@@ -282,7 +282,7 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
       this.pids.angle.set_measure(-this.vehicle.body.angle);
 //      this.pids.angle.set_target(clerp(500, altitude, 800, 0, Math.atan2(-vel[0], -vel[1])));
       this.pids.angle.set_target(Math.atan2(-vel[0], -vel[1]));
-      
+
       this.pids.gimbal.set_measure(-this.vehicle.body.angularVelocity);
       this.pids.gimbal.set_target(this.pids.angle.get());
       
