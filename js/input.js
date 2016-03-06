@@ -33,7 +33,9 @@ var K = {
   SHIFT: 16,
   CONTROL: 17,
   LEFT_SQUARE_BRACKET: 219,
-  RIGHT_SQUARE_BRACKET: 221
+  RIGHT_SQUARE_BRACKET: 221,
+  COMMA: 188,
+  PERIOD: 190
 };
 
 var Input = Events.extend(function(base) {
@@ -76,7 +78,8 @@ var UserInput = Input.extend(function(base) {
 
       this.keys = {};
 
-      this.autopilot = true;
+      this.debug = this.game.restore('debug', false);
+      this.autopilot = this.game.restore('autopilot', false);
 
       this.trigger_reset = false;
 
@@ -84,6 +87,10 @@ var UserInput = Input.extend(function(base) {
 
       $(window).keydown(with_scope(this, this.keydown));
       $(window).keyup(with_scope(this, this.keyup));
+    },
+
+    reset: function() {
+      base.reset.apply(this, arguments);
     },
 
     apply_vehicle: function(vehicle) {
@@ -126,6 +133,18 @@ var UserInput = Input.extend(function(base) {
 
       if(this.get_key(K.A) == 1) {
         this.autopilot = !this.autopilot;
+        this.game.save('autopilot', this.autopilot);
+      }
+
+      if(this.get_key(K.D) == 1) {
+        this.debug = !this.debug;
+        this.game.save('debug', this.debug);
+      }
+
+      if(this.get_key(K.COMMA) == 1) {
+        this.game.time_scale *= 0.5;
+      } else if(this.get_key(K.PERIOD) == 1) {
+        this.game.time_scale *= 2;
       }
 
       if(this.get_key(K.LEFT_SQUARE_BRACKET) == 1) {

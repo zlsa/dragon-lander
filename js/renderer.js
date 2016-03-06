@@ -237,11 +237,14 @@ var Renderer = Events.extend(function(base) {
 //        this.draw_hud_acceleration(target);
 
         var values = [];
-        var debug = true;
+        var debug = this.game.input.debug;
+
+        var timewarp = this.game.time_scale;
+        if(timewarp < 1) timewarp = '1/' + (1/timewarp);
 
         values.push([
-          'ATM',
-          this.scene.world.get_pressure(target.get_position()) / 1.22
+          'TIMEWARP',
+          timewarp + 'x'
         ]);
 
         values.push([
@@ -253,27 +256,12 @@ var Renderer = Events.extend(function(base) {
 
         if(isFinite(fuel_left))
           fuel_left = time_str(fuel_left);
+        else
+          fuel_left = '--:--';
         
         values.push([
-          'FUEL LEFT',
+          'FUEL LEFT (SECONDS)',
           fuel_left + ''
-        ]);
-
-        if(debug) {
-          values.push([
-            'MASS',
-            rnd(target.get_mass()) + 'kg'
-          ]);
-        }
-
-        values.push([
-          'ALTITUDE',
-          distance_str(target.get_position()[1])
-        ]);
-
-        values.push([
-          'RANGE',
-          distance_str(target.get_position()[0])
         ]);
 
         values.push([
@@ -281,15 +269,20 @@ var Renderer = Events.extend(function(base) {
           target.get_throttle()
         ]);
 
-        var twr = target.get_twr(); 
-        var peak_twr = target.get_twr(true);
-
         values.push([
-          'TWR',
-          rnd(twr, 2) + ' (' + rnd(peak_twr, 2) + ')'
+          'ALTITUDE',
+          distance_str(target.get_position()[1])
         ]);
 
         if(debug) {
+          var twr = target.get_twr(); 
+          var peak_twr = target.get_twr(true);
+
+          values.push([
+            'TWR',
+            rnd(twr, 2) + ' (' + rnd(peak_twr, 2) + ')'
+          ]);
+
           values.push([
             'G-FORCE',
             rnd(distance_2d(target.get_acceleration()) / this.scene.world.gravity, 2) + 'G (' + rnd(distance_2d(target.get_peak_acceleration()) / this.scene.world.gravity, 2) + 'G)'
@@ -307,19 +300,23 @@ var Renderer = Events.extend(function(base) {
             'VELOCITY',
             rnd(target.get_speed()) + 'm/s'
           ]);
+        }
 
-          var ap = target.autopilot.states[target.autopilot.state];
-          if(target.input != target.autopilot) ap = '-';
-          
-          values.push([
-            'AP STATE',
-            ap
-          ]);
-          
-          values.push([
-            'AP VALUE',
-            target.autopilot.value + ''
-          ]);
+        var ap = target.autopilot.states[target.autopilot.state].toUpperCase();
+        if(target.input != target.autopilot) ap = 'DISABLED';
+        
+        values.push([
+          'AP STATE',
+          ap
+        ]);
+        
+        if(debug) {
+          if(target.input == target.autopilot) {
+            values.push([
+              'AP VALUE',
+              target.autopilot.value + ''
+            ]);
+          }
           
         }
 

@@ -76,7 +76,7 @@ var SuperDracoPod = Engine.extend(function(base) {
       this.performance = {
         thrust: 68170 * 4,
         isp: 240,
-        throttle_min: 0.2,
+        throttle_min: 0,
         throttle_max: 1,
         throttle_response: 0.01,
         gimbal_response: 0.0
@@ -126,8 +126,8 @@ var CrewDragonEngine = Engine.extend(function(base) {
       return [this.pods[0].get_force(), this.pods[1].get_force()];
     },
     
-    get_thrust: function() {
-      return this.pods[0].get_thrust() + this.pods[1].get_thrust();
+    get_thrust: function(max) {
+      return this.pods[0].get_thrust(max) + this.pods[1].get_thrust(max);
     },
 
     get_max_thrust: function() {

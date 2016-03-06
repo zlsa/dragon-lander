@@ -70,7 +70,7 @@ var Vehicle = Events.extend(function(base) {
       var angle = get_object(options, 'angle', 0);
       var speed = get_object(options, 'speed', null);
       
-      if(speed == null)
+      if(speed == null && position[1] != 0)
         speed = -this.get_terminal_velocity(position[1]);
 
       this.body.velocity[0] = Math.sin(angle) * speed;
@@ -97,8 +97,7 @@ var Vehicle = Events.extend(function(base) {
     },
 
     get_twr: function(max) {
-      var thrust = this.get_thrust();
-      if(max) thrust = this.get_thrust(true);
+      var thrust = this.get_thrust(max);
       return thrust / this.get_mass() / 9.81;
     },
     
@@ -265,9 +264,9 @@ var Vehicle = Events.extend(function(base) {
         (this.last_velocity[1] - this.velocity[1]) / elapsed - this.world.gravity
       ];
 
-      if(this.get_speed() < 0.04) acceleration = [0, 0];
+      if(this.get_speed() < 0.04) acceleration = [0, -this.world.gravity];
 
-      var damp = 0.3;
+      var damp = 0.1;
       
       this.acceleration[0] += (acceleration[0] - this.acceleration[0]) / (damp / elapsed);
       this.acceleration[1] += (acceleration[1] - this.acceleration[1]) / (damp / elapsed);
@@ -445,13 +444,11 @@ var CrewDragonVehicle = Vehicle.extend(function(base) {
     },
 
     draw_flame: function(throttle) {
-      this.context.globalAlpha = throttle * clerp(0, Math.random(), 1, 0.7, 1);
+      this.context.globalAlpha = throttle;
       
       this.context.globalCompositeOperation = 'lighter';
       
       draw_image(this.context, this.images['flame'].data, this.image_size, this.image_factor);
-      draw_image(this.context, this.images['flame'].data, this.image_size, this.image_factor);
-      draw_image(this.context, this.images['flame-diamonds'].data, this.image_size, this.image_factor);
       draw_image(this.context, this.images['flame-diamonds'].data, this.image_size, this.image_factor);
     },
 
@@ -549,8 +546,8 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
       for(var i=0; i<this.gear_locks.length; i++) {
         var c = this.gear_locks[i];
         for(var j=0; j<c.equations.length; j++) {
-//          c.equations[j].stiffness = 1e10;
-//          c.equations[j].relaxation = 10;
+          c.equations[j].stiffness = 1e10;
+          c.equations[j].relaxation = 10;
         }
       }
       
@@ -624,13 +621,13 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
       this.gear_constraints.push(new p2.RevoluteConstraint(this.body, body, {
         localPivotA: [side * rad/2, -18],
         localPivotB: [side * rad/2, 2],
-        maxForce: this.mass * 500,
+        maxForce: this.mass * 1500,
         collideConnected: false
       }));
 
       var distance = new p2.DistanceConstraint(this.body, body, {
         distance: 10,
-        localAnchorA: [0, -14],
+        localAnchorA: [0, -18],
         localAnchorB: [side * span/2, 0],
         maxForce: this.mass * 300,
         collideConnected: false
@@ -641,7 +638,7 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
       this.gear_constraints.push(distance);
       
       var lock = new p2.LockConstraint(this.body, body, {
-        localOffsetB: [side * rad/2, -19.9],
+        localOffsetB: [side * rad/2, -20],
         localAngleB: 0,
         maxForce: this.mass * 300,
         collideConnected: false
@@ -821,7 +818,7 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
       }
       
       for(i=0; i<this.gear_pistons.length; i++) {
-        this.gear_pistons[i].distance = clerp(0, this.gear.get(this.time), 1, 0.5, 7);
+        this.gear_pistons[i].distance = clerp(0, this.gear.get(this.time), 1, 0.5, 4.5);
       }
 
       for(var i=0; i<this.gear_constraints.length; i++) {

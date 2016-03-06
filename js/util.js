@@ -191,6 +191,8 @@ var Controller = function(k_p, k_i, k_d, i_max) {
   this.lastError = 0;
   this.lastTime  = 0;
 
+  this.ignore = false;
+
   this.limits = [-Infinity, Infinity];
 
   this.target    = 0; // default value, can be modified with .setTarget
@@ -211,6 +213,7 @@ Controller.prototype.get = function() {
 };
 
 Controller.prototype.update = function(dt) {
+  if(this.ignore) return this.output;
 
   var error = (this.target - this.currentValue);
   this.sumError = this.sumError + error*dt;
@@ -238,8 +241,11 @@ function lpad(num, size) {
   return s.substr(s.length-size);
 }
 
-function time_str(t) {
+function time_str(t, show_ms) {
   var seconds = Math.floor(t % 60);
   var minutes = Math.floor(t / 60);
+  var ms      = Math.floor(t * 1000);
+  if(show_ms)
+    return lpad(minutes, 2) + ':' + lpad(seconds, 2) + '.' + lpad(ms, 3);
   return lpad(minutes, 2) + ':' + lpad(seconds, 2);
 }

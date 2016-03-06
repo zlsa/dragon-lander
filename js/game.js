@@ -32,6 +32,57 @@ var Game = Events.extend(function(base) {
 
     init_scenarios: function() {
       this.scenarios = {
+        'crew-dragon-landed': {
+          name: 'Crew Dragon',
+          vehicles: [
+            
+            {
+              type: 'crew-dragon',
+              position: [0, 0]
+            }
+            
+          ]
+        },
+        
+        'f9-landed-1-engine': {
+          name: 'Falcon 9 (1 engine)',
+          vehicles: [
+            
+            {
+              type: 'falcon-9',
+              engines: 1,
+              position: [0, 0]
+            }
+            
+          ]
+        },
+
+        'crew-dragon-hoverslam': {
+          name: 'Crew Dragon Hoverslam',
+          vehicles: [
+            
+            {
+              type: 'crew-dragon',
+              position: [0, 1000],
+              angle: radians(-20)
+            }
+            
+          ]
+        },
+       
+        'crew-dragon-sightseeing': {
+          name: 'Crew Dragon Sightseeing',
+          vehicles: [
+            
+            {
+              type: 'crew-dragon',
+              position: [0, 1000],
+              angle: radians(60)
+            }
+            
+          ]
+        },
+       
         'f9-hoverslam-1-engine': {
           name: 'Falcon 9 Hoverslam (1 engine)',
           vehicles: [
@@ -40,11 +91,13 @@ var Game = Events.extend(function(base) {
               type: 'falcon-9',
               engines: 1,
               position: [0, 2000],
-              speed: null
+              speed: null,
+              angle: radians(-10)
             }
             
           ]
         },
+        
         'f9-hoverslam-3-engine': {
           name: 'Falcon 9 Hoverslam (3 engine)',
           vehicles: [
@@ -53,11 +106,13 @@ var Game = Events.extend(function(base) {
               type: 'falcon-9',
               engines: 3,
               position: [0, 2000],
-              speed: null
+              speed: null,
+              angle: radians(-10)
             }
             
           ]
         }
+        
       };
 
       var scope = this;
@@ -76,11 +131,27 @@ var Game = Events.extend(function(base) {
         $('#scenarios ul').append(el);
       }
 
-      this.switch_scenario('f9-hoverslam-1-engine');
+      var scenario = this.restore('scenario', 'dragon-hoverslam');
+      
+      this.switch_scenario(scenario);
+    },
+
+    save: function(key, value) {
+      localStorage['dragon-lander-' + key] = JSON.stringify(value);
+    },
+
+    restore: function(key, def) {
+      key = 'dragon-lander-' + key;
+      if(!(key in localStorage)) return def;
+      return JSON.parse(localStorage[key]);
     },
 
     switch_scenario: function(s) {
+      if(!(s in this.scenarios)) return;
+      
       this.scenario = this.scenarios[s];
+
+      this.save('scenario', s);
 
       this.reset();
     },
@@ -109,6 +180,9 @@ var Game = Events.extend(function(base) {
     },
 
     reset: function() {
+      
+      this.time_scale = 1;
+      
       for(var i=0; i<this.vehicles.length; i++) {
         this.vehicles[i].destroy();
       }
@@ -122,6 +196,8 @@ var Game = Events.extend(function(base) {
         
         if(v.type == 'falcon-9')
           vehicle = new Falcon9Vehicle(this, new HoverslamAutopilotInput(this));
+        else if(v.type == 'crew-dragon')
+          vehicle = new CrewDragonVehicle(this, new HoverslamAutopilotInput(this));
         
         vehicle.reset({
           position: v.position,
@@ -140,10 +216,13 @@ var Game = Events.extend(function(base) {
       
       for(var i=0; i<this.vehicles.length; i++) {
         
-        if(i == this.target && !this.input.autopilot)
+        if(i == this.target && !this.input.autopilot) {
+          if(this.vehicles[i].input != this.input)
+            this.vehicles[i].autopilot.reset();
           this.vehicles[i].input = this.input;
-        else
+        } else {
           this.vehicles[i].input = this.vehicles[i].autopilot;
+        }
         
         this.vehicles[i].pre_physics(elapsed);
       }
@@ -157,19 +236,13 @@ var Game = Events.extend(function(base) {
     },
 
     tick: function(elapsed) {
-      if(this.get_target() && this.get_target().get_speed() > 1) {
-//        this.time_scale = clerp(0.1, this.get_target().get_throttle(), 0.2, 1, 0.2);
-      } else {
-        this.time_scale = 1;
-      }
       elapsed = elapsed * this.time_scale;
       this.time += elapsed;
 
       this.input.tick(elapsed);
 
       if(elapsed) {
-        var substeps = Math.ceil(3 * this.time_scale);
-        substeps = 1;
+        var substeps = clamp(2, Math.ceil(3 * this.time_scale), 20);
 
         for(var i=0; i<substeps; i++)
           this.physics_substep(elapsed / substeps);
