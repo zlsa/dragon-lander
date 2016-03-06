@@ -18,5 +18,34 @@
   margin: 0;
   padding: 0; }
 
+#scenarios {
+  position: absolute;
+  top: 0;
+  right: 0;
+  color: #404040;
+  text-shadow: 0 0 2px white, 0 0 2px white, 0 0 2px white;
+  font-family: monospace; }
+  #scenarios h1 {
+    font-size: 14px;
+    font-weight: bold; }
+  #scenarios h1, #scenarios li {
+    padding: 8px 24px;
+    text-align: right; }
+  #scenarios ul {
+    position: relative;
+    list-style-type: none;
+    opacity: 0.3;
+    transition: opacity 0.2s ease-in-out; }
+    #scenarios ul li {
+      font-size: 11px;
+      text-transform: uppercase;
+      transition: background-color 0.2s ease-in-out; }
+      #scenarios ul li:hover {
+        cursor: pointer;
+        background-color: rgba(0, 0, 0, 0.05); }
+
+#scenarios:hover ul {
+  opacity: 1; }
+
 html {
   overflow: hidden; }

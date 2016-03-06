@@ -25,6 +25,63 @@ var Game = Events.extend(function(base) {
       
       this.loader.bind('finished', done);
 
+      this.init_scenarios();
+
+      this.reset();
+    },
+
+    init_scenarios: function() {
+      this.scenarios = {
+        'f9-hoverslam-1-engine': {
+          name: 'Falcon 9 Hoverslam (1 engine)',
+          vehicles: [
+            
+            {
+              type: 'falcon-9',
+              engines: 1,
+              position: [0, 2000],
+              speed: null
+            }
+            
+          ]
+        },
+        'f9-hoverslam-3-engine': {
+          name: 'Falcon 9 Hoverslam (3 engine)',
+          vehicles: [
+            
+            {
+              type: 'falcon-9',
+              engines: 3,
+              position: [0, 2000],
+              speed: null
+            }
+            
+          ]
+        }
+      };
+
+      var scope = this;
+
+      for(var i in this.scenarios) {
+        var s = this.scenarios[i];
+        var el = $('<li>');
+        
+        el.text(s.name);
+        
+        el.attr('data-scenario', i);
+        el.click(function() {
+          scope.switch_scenario.call(scope, $(this).attr('data-scenario'));
+        });
+        
+        $('#scenarios ul').append(el);
+      }
+
+      this.switch_scenario('f9-hoverslam-1-engine');
+    },
+
+    switch_scenario: function(s) {
+      this.scenario = this.scenarios[s];
+
       this.reset();
     },
 
@@ -57,18 +114,23 @@ var Game = Events.extend(function(base) {
       }
       
       this.vehicles = [];
-      
-      for(i=0; i<1; i++) {
+
+      for(i=0; i<this.scenario.vehicles.length; i++) {
+        var v = this.scenario.vehicles[i];
+
+        var vehicle = null;
         
-        v = new Falcon9Vehicle(this, new HoverslamAutopilotInput(this));
+        if(v.type == 'falcon-9')
+          vehicle = new Falcon9Vehicle(this, new HoverslamAutopilotInput(this));
         
-        v.reset({
-          position: [i * 50, 1500],
-          angle: radians(10),
-          speed: null
+        vehicle.reset({
+          position: v.position,
+          angle: v.angle || 0,
+          speed: v.speed || null,
+          engines: v.engines || 1
         });
         
-        this.add_vehicle(v);
+        this.add_vehicle(vehicle);
       }
 
       this.target = Math.floor(this.vehicles.length/2);

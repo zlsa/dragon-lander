@@ -517,15 +517,25 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
       this.engines.push(new Merlin1DEngine(this, this.tank, [0, -18]));
       this.engines.push(new Merlin1DEngine(this, this.tank, [1.3, -18]));
 
-      this.engines[0].disabled = true;
-//      this.engines[1].disabled = true;
-      this.engines[2].disabled = true;
-      
       base.init.apply(this, arguments);
 
       this.gear.duration = 2;
     },
 
+    reset: function(options) {
+      options = options || {};
+      
+      if('engines' in options){
+        if(options.engines == 1) {
+          this.engines[0].disabled = true;
+          this.engines[2].disabled = true;
+        } else if(options.engines == 2) {
+          this.engines[1].disabled = true;
+        }
+      }
+      
+      base.reset.apply(this, arguments);
+    },
     add_to_world: function(world) {
       var w = world.world;
       

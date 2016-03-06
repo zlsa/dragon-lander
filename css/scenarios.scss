@@ -1,0 +1,49 @@
+
+#scenarios {
+  position: absolute;
+  top: 0;
+  right: 0;
+
+  color: #404040;
+  text-shadow: 0 0 2px white, 0 0 2px white, 0 0 2px white;
+
+  font-family: monospace;
+
+  h1 {
+    font-size: 14px;
+    font-weight: bold;
+  }
+
+  h1, li {
+    padding: 8px 24px;
+    text-align: right;
+  }
+
+  ul {
+    position: relative;
+    list-style-type: none;
+
+    opacity: 0.3;
+
+    transition: opacity 0.2s ease-in-out;
+
+    li {
+      font-size: 11px;
+      text-transform: uppercase;
+
+      transition: background-color 0.2s ease-in-out;
+
+      &:hover {
+        cursor: pointer;
+        background-color: rgba(black, 0.05);
+      }
+      
+    }
+    
+  }
+  
+}
+
+#scenarios:hover ul {
+  opacity: 1;
+}
