@@ -62,6 +62,7 @@ var Input = Events.extend(function(base) {
     },
 
     reset: function() {
+      this.gear = null;
     }
 
   };

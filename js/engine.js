@@ -24,6 +24,10 @@ var Engine = Events.extend(function(base) {
       base.init.apply(this, arguments);
     },
 
+    get_gimbal_angle: function() {
+      return this.gimbal * this.performance.gimbal;
+    },
+
     set_gimbal: function(gimbal) {
       this.gimbal_command = clamp(-1, gimbal, 1);
     },
@@ -36,23 +40,27 @@ var Engine = Events.extend(function(base) {
       return [[0, this.get_thrust()], this.position];
     },
 
-    get_thrust: function() {
+    get_thrust: function(max) {
+      if(this.disabled) return 0;
+      if(max) return this.performance.thrust;
       return this.throttle * this.performance.thrust;
     },
 
-    get_max_thrust: function() {
-      return this.performance.thrust;
-    },
-
     get_fuel_flow: function() {
-      return this.get_thrust() / (9.81 * this.performance.isp) * 2;
+      return this.get_thrust() / (9.81 * this.performance.isp);
     },
 
     tick: function(elapsed) {
-      this.throttle += (this.throttle_command - this.throttle) / (this.performance.throttle_response / elapsed);
+      var tc = this.throttle_command;
+      if(tc > 0.00001) tc = clamp(this.performance.throttle_min, tc, this.performance.throttle_max);
       
-      if(this.tank.is_empty()) this.throttle = 0;
-      
+      if(this.tank.is_empty() || this.disabled) tc = 0;
+      this.throttle += (tc - this.throttle) / (this.performance.throttle_response / elapsed);
+      this.gimbal += (this.gimbal_command - this.gimbal) / (this.performance.gimbal_response / elapsed);
+
+      this.throttle = clamp(0, this.throttle, 1);
+      this.gimbal = clamp(-1, this.gimbal, 1);
+
       this.tank.add_fuel_flow(-this.get_fuel_flow());
     }
 
@@ -68,7 +76,10 @@ var SuperDracoPod = Engine.extend(function(base) {
       this.performance = {
         thrust: 68170 * 4,
         isp: 240,
-        throttle_response: 0.01
+        throttle_min: 0.2,
+        throttle_max: 1,
+        throttle_response: 0.01,
+        gimbal_response: 0.0
       };
     }
 
@@ -130,3 +141,31 @@ var CrewDragonEngine = Engine.extend(function(base) {
 
   };
 });
+
+var Merlin1DEngine = Engine.extend(function(base) {
+  return {
+
+    init: function() {
+      base.init.apply(this, arguments);
+
+      this.performance = {
+        thrust: 756000,
+        isp: 282,
+        throttle_min: 0.5,
+        throttle_max: 1,
+        throttle_response: 0.05,
+        gimbal_response: 0.01,
+        gimbal: radians(10)
+      };
+    },
+
+    get_force: function() {
+      var angle = -this.gimbal * this.performance.gimbal;
+      var thrust = this.get_thrust();
+      
+      return [[Math.sin(angle) * thrust, Math.cos(angle) * thrust], this.position];
+    }
+
+  };
+});
+

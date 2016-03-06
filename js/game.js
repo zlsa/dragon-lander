@@ -19,19 +19,13 @@ var Game = Events.extend(function(base) {
 
       this.target = 0;
 
-      var num = 1;
-      for(var i=0; i<num; i++) {
-        var v = new CrewDragonVehicle(this, new LandingAutopilotInput(this));
-        v.extra = i;
-        v.move_to([i * 10, 1000]);
-        this.add_vehicle(v);
-      }
-
       this.target = Math.floor(this.vehicles.length/2);
 
       this.bind('resize', with_scope(this, this.resize));
       
       this.loader.bind('finished', done);
+
+      this.reset();
     },
 
     add_vehicle: function(v) {
@@ -59,13 +53,53 @@ var Game = Events.extend(function(base) {
 
     reset: function() {
       for(var i=0; i<this.vehicles.length; i++) {
-        this.vehicles[i].reset();
-        this.vehicles[i].move_to([i * 10, 500]);
+        this.vehicles[i].destroy();
       }
+      
+      this.vehicles = [];
+      
+      for(i=0; i<1; i++) {
+        
+        v = new Falcon9Vehicle(this, new HoverslamAutopilotInput(this));
+        
+        v.reset({
+          position: [i * 50, 1500],
+          angle: radians(10),
+          speed: null
+        });
+        
+        this.add_vehicle(v);
+      }
+
       this.target = Math.floor(this.vehicles.length/2);
     },
 
+    physics_substep: function(elapsed) {
+      
+      for(var i=0; i<this.vehicles.length; i++) {
+        
+        if(i == this.target && !this.input.autopilot)
+          this.vehicles[i].input = this.input;
+        else
+          this.vehicles[i].input = this.vehicles[i].autopilot;
+        
+        this.vehicles[i].pre_physics(elapsed);
+      }
+      
+      this.scene.world.tick(elapsed);
+      
+      for(i=0; i<this.vehicles.length; i++) {
+        this.vehicles[i].post_physics(elapsed);
+      }
+      
+    },
+
     tick: function(elapsed) {
+      if(this.get_target() && this.get_target().get_speed() > 1) {
+//        this.time_scale = clerp(0.1, this.get_target().get_throttle(), 0.2, 1, 0.2);
+      } else {
+        this.time_scale = 1;
+      }
       elapsed = elapsed * this.time_scale;
       this.time += elapsed;
 
@@ -73,26 +107,10 @@ var Game = Events.extend(function(base) {
 
       if(elapsed) {
         var substeps = Math.ceil(3 * this.time_scale);
+        substeps = 1;
 
-        for(var i=0; i<substeps; i++) {
-
-          var el = elapsed / substeps;
-          
-          for(var j=0; j<this.vehicles.length; j++) {
-            if(j == this.target && !this.input.autopilot)
-              this.vehicles[j].input = this.input;
-            else
-              this.vehicles[j].input = null;
-            this.vehicles[j].pre_physics(el);
-          }
-          
-          this.scene.world.tick(el);
-          
-          for(j=0; j<this.vehicles.length; j++) {
-            this.vehicles[j].post_physics(el);
-          }
-          
-        }
+        for(var i=0; i<substeps; i++)
+          this.physics_substep(elapsed / substeps);
       }
 
       this.scene.renderer.clear();
@@ -102,6 +120,7 @@ var Game = Events.extend(function(base) {
       }
       
       this.scene.renderer.draw_hud();
+      
     }
 
   };

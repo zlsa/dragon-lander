@@ -144,6 +144,8 @@ var Renderer = Events.extend(function(base) {
       cc.lineWidth = 2;
       
       cc.stroke();
+      
+      cc.globalAlpha = 1;
     },
 
     draw_hud_circle: function(radius, alpha, color) {
@@ -167,6 +169,8 @@ var Renderer = Events.extend(function(base) {
       cc.lineWidth = 2;
       
       cc.stroke();
+      
+      cc.globalAlpha = 1;
     },
 
     draw_hud_bar: function(size, fraction, alpha, color) {
@@ -180,12 +184,19 @@ var Renderer = Events.extend(function(base) {
       
       cc.globalAlpha = alpha;
 
-      cc.fillStyle = 'rgba(0, 0, 0, 0.3)';
-      
+      cc.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+      cc.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      cc.lineWidth = padding;
+
       cc.fillRect(-width * 0.5, -height * 0.5, width, height);
+
+      var hp = padding * 0.5;
+      cc.strokeRect(-width * 0.5 + hp, -height * 0.5 + hp, width - padding, height - padding);
 
       cc.fillStyle = color;
       cc.fillRect(-width * 0.5 + padding, -height * 0.5 + padding, (width - padding * 2) * fraction, height - padding * 2);
+      
+      cc.globalAlpha = 1;
     },
 
     draw_hud_bar_text: function(size, text) {
@@ -222,10 +233,8 @@ var Renderer = Events.extend(function(base) {
       var target = this.game.get_target();
 
       if(target) {
-//        this.draw_hud_speed(target);
-        cc.globalAlpha = 1;
-        this.draw_hud_acceleration(target);
-        cc.globalAlpha = 1;
+        this.draw_hud_speed(target);
+//        this.draw_hud_acceleration(target);
 
         var values = [];
         var debug = true;
@@ -238,6 +247,16 @@ var Renderer = Events.extend(function(base) {
         values.push([
           'FUEL',
           target.tank.get_amount_fraction()
+        ]);
+
+        var fuel_left = target.tank.get_fuel_time_left();
+
+        if(isFinite(fuel_left))
+          fuel_left = time_str(fuel_left);
+        
+        values.push([
+          'FUEL LEFT',
+          fuel_left + ''
         ]);
 
         if(debug) {
@@ -259,7 +278,7 @@ var Renderer = Events.extend(function(base) {
 
         values.push([
           'THROTTLE',
-          target.engine.throttle_command
+          target.get_throttle()
         ]);
 
         var twr = target.get_twr(); 
@@ -273,13 +292,9 @@ var Renderer = Events.extend(function(base) {
         if(debug) {
           values.push([
             'G-FORCE',
-            rnd(distance_2d(target.get_acceleration()) / this.scene.world.gravity, 2) + 'G'
+            rnd(distance_2d(target.get_acceleration()) / this.scene.world.gravity, 2) + 'G (' + rnd(distance_2d(target.get_peak_acceleration()) / this.scene.world.gravity, 2) + 'G)'
           ]);
 
-          values.push([
-            'PEAK G-FORCE',
-            rnd(distance_2d(target.get_peak_acceleration()) / this.scene.world.gravity, 2) + 'G'
-          ]);
         }
 
         if(debug) {
@@ -292,10 +307,18 @@ var Renderer = Events.extend(function(base) {
             'VELOCITY',
             rnd(target.get_speed()) + 'm/s'
           ]);
+
+          var ap = target.autopilot.states[target.autopilot.state];
+          if(target.input != target.autopilot) ap = '-';
           
           values.push([
             'AP STATE',
-            target.autopilot.value
+            ap
+          ]);
+          
+          values.push([
+            'AP VALUE',
+            target.autopilot.value + ''
           ]);
           
         }

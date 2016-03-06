@@ -127,7 +127,6 @@ var File = Events.extend(function(base) {
     done: function() {
       this.finished = true;
 
-      console.log(this.url);
       this.parse.apply(this, arguments);
 
       this.fire('done', this);

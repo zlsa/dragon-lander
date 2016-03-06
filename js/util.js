@@ -1,6 +1,6 @@
 
 function clamp(a, n, b) {
-  if(!b) b = Infinity;
+  if(typeof b == 'undefined') b = Infinity;
   if(a > b) {
     var temp = a;
     a = b;
@@ -232,3 +232,14 @@ Controller.prototype.reset = function() {
   this.lastError = 0;
   this.lastTime  = 0;
 };
+
+function lpad(num, size) {
+  var s = '000000000' + num;
+  return s.substr(s.length-size);
+}
+
+function time_str(t) {
+  var minutes = rnd(t / 60);
+  var seconds = rnd(t % 60);
+  return lpad(minutes, 2) + ':' + lpad(seconds, 2);
+}

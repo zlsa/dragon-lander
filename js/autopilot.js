@@ -26,7 +26,8 @@ var AutopilotInput = Input.extend(function(base) {
       this.target = {
         altitude: 10
       };
-      
+
+      base.reset.apply(this, arguments);
     },
 
     has_state: function(s) {
@@ -196,24 +197,22 @@ var HoverAutopilotInput = AutopilotInput.extend(function(base) {
   };
 });
 
-var LandingAutopilotInput = AutopilotInput.extend(function(base) {
+var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
   return {
 
     reset: function() {
       base.reset.call(this);
 
       this.new_pid('vspeed', 0.15, 0.03, 0, 0.5);
+      this.pids.vspeed.limits = [0, 1];
       
-      this.new_pid('hoverslam', 0.1, 0.1);
+      this.new_pid('hoverslam', 0.1, 0.3);
+      this.pids.hoverslam.limits = [0, 1];
       
-      this.new_pid('hspeed', 0.2, 0.03, 0, radians(10));
-      var limit = radians(40);
-      this.pids.hspeed.limits = [-limit, limit];
-      
-      this.new_pid('angle', 4, 0.2, 0.1, radians(5));
-      limit = radians(40);
+      this.new_pid('angle', 1, 0.05, 0.05, radians(15));
+      limit = radians(20);
       this.pids.angle.limits = [-limit, limit];
-      this.new_pid('gimbal', 0.6, 0.2);
+      this.new_pid('gimbal', 0.05, 0.1);
       this.pids.gimbal.limits = [-1, 1];
       
       this.add_state('coast');
@@ -225,48 +224,64 @@ var LandingAutopilotInput = AutopilotInput.extend(function(base) {
     },
 
     calc_hoverslam: function() {
-//      var terminal_velocity = this.vehicle.get_terminal_velocity(0);
-      var twr = this.vehicle.get_twr(true) * 0.8;
+      var twr = (this.vehicle.get_twr(true) || 1000) * 0.9;
 
-      var vspeed = this.vehicle.get_velocity()[1];
+      var vspeed = this.vehicle.get_velocity()[1] || 100;
       var alt = 0;
 
       var step = 0.01;
       
+      this.hoverslam.time = 0;
+
+      var dragf;
+      
+      var i=0;
       while(vspeed < 0) {
         vspeed += ((twr - 1) * 9.81) * step;
+//        dragf = this.vehicle.get_drag(0, [0, vspeed]);
+//        vspeed += dragf / this.vehicle.get_mass();
         alt += vspeed * step;
+        this.hoverslam.time += step;
+        if(++i > 10000)
+          break;
       }
 
-      this.hoverslam.altitude = this.vehicle.get_altitude() + 2.2 + alt;
+      this.hoverslam.altitude = this.vehicle.get_altitude() - this.vehicle.get_rest_altitude() + alt;
       this.hoverslam.distance = -alt;
 
       this.hoverslam.twr = twr;
+      
     },
 
     tick: function(elapsed) {
-      this.calc_hoverslam();
-      
       var altitude = this.vehicle.get_altitude();
+      var rest_altitude = this.vehicle.get_rest_altitude();
       var twr = this.vehicle.get_twr(true);
+      var landing_vspeed = lerp(rest_altitude + 1, altitude, rest_altitude, lerp(1, twr - 1, 5, -1, -3), 0.1);
+      altitude -= rest_altitude;
 
+      this.calc_hoverslam();
+        
       this.pids.vspeed.set_measure(this.vehicle.get_velocity()[1]);
-      this.pids.vspeed.set_target(lerp(2.3 + 1, altitude, 2.3, -3, 0));
+      this.pids.vspeed.set_target(landing_vspeed);
       
       if(this.is_state('landing')) {
         this.throttle = this.pids.vspeed.get();
       } else if(this.is_state('hoverslam')) {
-        this.pids.hoverslam.set_measure(-2 - clerp(0, this.vehicle.get_speed(), 30, 0, 20));
-        this.pids.hoverslam.set_target(-this.hoverslam.altitude * clerp(0, Math.abs(this.hoverslam.distance), 500, 1, 0.1));
+        this.pids.hoverslam.set_measure(-clerp(0, this.vehicle.get_speed(), 1000, 0.1, 30));
+        
+        var factor = 1;
+        factor *= clerp(0, Math.abs(this.hoverslam.distance), 500, 0.7, 0.2);
+        this.pids.hoverslam.set_target(-this.hoverslam.altitude * factor);
         
         this.throttle = this.pids.hoverslam.get();
       }
-      
-      this.pids.hspeed.set_measure(this.vehicle.get_velocity()[0]);
-      this.pids.hspeed.set_target(0);
+
+      var vel = this.vehicle.get_velocity();
       
       this.pids.angle.set_measure(-this.vehicle.body.angle);
-      this.pids.angle.set_target(this.pids.hspeed.get());
+//      this.pids.angle.set_target(clerp(500, altitude, 800, 0, Math.atan2(-vel[0], -vel[1])));
+      this.pids.angle.set_target(Math.atan2(-vel[0], -vel[1]));
       
       this.pids.gimbal.set_measure(-this.vehicle.body.angularVelocity);
       this.pids.gimbal.set_target(this.pids.angle.get());
@@ -275,15 +290,16 @@ var LandingAutopilotInput = AutopilotInput.extend(function(base) {
 
       this.gimbal = this.pids.gimbal.get();
       
-      if(this.hoverslam.altitude < 100 && this.is_state('coast')) {
+      if(this.hoverslam.altitude < 10 && this.is_state('coast')) {
         this.next_state();
+        console.log('landing time: ' + rnd(this.hoverslam.time, 2));
       }
       
-      if(altitude < 5 && this.is_state('hoverslam')) {
+      if(altitude < 2 && this.is_state('hoverslam')) {
         this.next_state();
       }
-      
-      if(altitude < 2.3 && this.is_state('landing')) {
+
+      if(altitude < 0.01 && this.is_state('landing')) {
         this.next_state();
       }
 
@@ -291,8 +307,16 @@ var LandingAutopilotInput = AutopilotInput.extend(function(base) {
         this.throttle = 0;
         this.gimbal = 0;
       }
+
+      if(this.is_state('hoverslam') || this.is_state('landing')) {
+        this.throttle = Math.max(0.01, this.throttle);
+      }
+
+      if(this.hoverslam.time < this.vehicle.gear.duration * 1.5 && !this.gear && !this.is_state('coast')) {
+        this.gear = true;
+      }
       
-      this.value = this.states[this.state];
+      this.value = distance_str(this.hoverslam.altitude);
     }
 
   };

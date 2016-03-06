@@ -12,10 +12,12 @@ var World = Events.extend(function(base) {
         broadphase: new p2.SAPBroadphase()
       });
 
+      this.world.solver.iterations = 100;
+
       this.init_ground();
 
-      this.world.setGlobalStiffness(1000000000);
-      this.world.setGlobalRelaxation(5);
+      this.world.setGlobalStiffness(1e20);
+      this.world.setGlobalRelaxation(10);
       
       base.init.apply(this, arguments);
     },
@@ -54,7 +56,7 @@ var World = Events.extend(function(base) {
     },
 
     add_vehicle: function(v) {
-      this.world.addBody(v.body);
+      v.add_to_world(this);
     },
 
     tick: function(elapsed) {
