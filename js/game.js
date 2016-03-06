@@ -131,7 +131,7 @@ var Game = Events.extend(function(base) {
         $('#scenarios ul').append(el);
       }
 
-      var scenario = this.restore('scenario', 'dragon-hoverslam');
+      var scenario = this.restore('scenario', 'crew-dragon-hoverslam');
       
       this.switch_scenario(scenario);
     },
@@ -153,6 +153,9 @@ var Game = Events.extend(function(base) {
 
       this.save('scenario', s);
 
+      $('[data-scenario]').removeClass('active');
+      $('[data-scenario=' + s + ']').addClass('active');
+      
       this.reset();
     },
 

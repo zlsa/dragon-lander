@@ -39,10 +39,13 @@
     #scenarios ul li {
       font-size: 11px;
       text-transform: uppercase;
-      transition: background-color 0.2s ease-in-out; }
+      transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out; }
       #scenarios ul li:hover {
         cursor: pointer;
         background-color: rgba(0, 0, 0, 0.05); }
+      #scenarios ul li.active {
+        color: #ccaa55;
+        font-weight: bold; }
 
 #scenarios:hover ul {
   opacity: 1; }
