@@ -236,6 +236,11 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
         altitude: 0,
       };
 
+      if(this.vehicle.vehicle_type == 'crew-dragon') 
+        this.hover.altitude = 100;
+      else if(this.vehicle.vehicle_type == 'red-dragon')
+        this.hover.altitude = 50;
+
       this.hoverslam = {
         altitude: 0,
         distance: 1,
@@ -247,12 +252,12 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
     calc_hoverslam: function() {
       var twr = (this.vehicle.get_twr(true) || 1000) * 0.9;
 
-      if(this.vehicle.vehicle_type == 'crew-dragon') twr = Math.min(4, twr); // don't want to smush the delicate people
+      if(this.vehicle.vehicle_type == 'crew-dragon') twr = Math.min(2.5, twr); // don't want to smush the delicate people
 
       if(this.vehicle.get_velocity()[1] > 0) return;
 
       var vspeed = this.vehicle.get_velocity()[1] || 100;
-      var alt = -this.hover.altitude;
+      var alt = -this.hover.altitude * 0.2;
 
       var step = 0.01;
       
@@ -263,8 +268,8 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
       var i=0;
       while(vspeed < 0) {
         vspeed += ((twr - 1) * 9.81) * step;
-//        dragf = this.vehicle.get_drag(0, [0, vspeed]);
-//        vspeed += dragf / this.vehicle.get_mass();
+        // dragf = this.vehicle.get_drag(0, [0, vspeed]);
+        // vspeed += dragf / this.vehicle.get_mass();
         alt += vspeed * step;
         this.hoverslam.time += step;
         if(++i > 10000)
@@ -286,7 +291,7 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
       var altitude = this.vehicle.get_altitude();
       var rest_altitude = this.vehicle.get_rest_altitude();
       var twr = this.vehicle.get_twr(true);
-      var landing_vspeed = lerp(rest_altitude + 1, altitude, rest_altitude, lerp(1, twr - 1, 5, -1, -1.2), 0.1);
+      var landing_vspeed = lerp(rest_altitude + 1, altitude, rest_altitude, lerp(1, twr - 1, 5, -0.5, -0.6), 0.1);
       altitude -= rest_altitude;
 
       this.calc_hoverslam();
@@ -316,12 +321,15 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
 
       this.pids.angle.set_measure(-this.vehicle.body.angle);
       
-      this.pids.angle.set_target(retrograde);
+      this.pids.angle.set_target(clerp(0.1, this.hoverslam.time, 0.2, 0, retrograde * 1.1));
 
       this.pids.gimbal.set_measure(-this.vehicle.body.angularVelocity);
       
       var ang_vel_fac = 1;
-      if(this.vehicle.vehicle_type == 'crew-dragon') ang_vel_fac *= 10;
+      // if(this.vehicle.vehicle_type == 'crew-dragon') ang_vel_fac *= 50;
+      // if(this.vehicle.vehicle_type == 'red-dragon') ang_vel_fac *= 50;
+
+      ang_vel_fac *= clerp(0, distance_2d(this.vehicle.get_velocity()), 300, 1, 15);
       
       this.pids.gimbal.set_target(this.pids.angle.get() * ang_vel_fac);
 
@@ -337,7 +345,7 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
 
       this.gimbal = this.pids.gimbal.get();
       
-      if(this.hoverslam.distance < 10 && this.is_state('coast')) {
+      if(this.hoverslam.distance < 10 && this.is_state('coast') && (this.vehicle.get_velocity()[1] < 0)) {
         this.next_state();
         console.log('landing time: ' + rnd(this.hoverslam.time, 2));
       }
@@ -346,11 +354,11 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
         this.next_state();
       }
 
-      if(this.vehicle.get_speed()[1] > -1 && this.is_state('hoverslam')) {
+      if(this.vehicle.get_velocity()[1] > -1 && this.is_state('hoverslam')) {
         this.next_state();
       }
 
-      if((altitude < 0.01 || this.vehicle.get_velocity()[1] > -0.2) && this.is_state('landing')) {
+      if((altitude < 0.01 || this.vehicle.get_velocity()[1] > -0.5) && this.is_state('landing')) {
         this.next_state();
       }
 
@@ -367,7 +375,7 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
         this.throttle = 0;
       }
 
-      if(this.hoverslam.time < this.vehicle.gear.duration * 1.5 && !this.gear && !this.is_state('coast')) {
+      if(this.hoverslam.time < this.vehicle.gear.duration * 1.2 && !this.gear && !this.is_state('coast')) {
         this.gear = true;
       }
       

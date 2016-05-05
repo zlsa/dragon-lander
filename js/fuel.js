@@ -69,9 +69,9 @@ var FuelTank = Events.extend(function(base) {
 var CrewDragonFuelTank = FuelTank.extend(function(base) {
   return {
 
-    reset: function() {
-      this.capacity = 1700;
-      this.amount = 1700;
+    reset: function(amount) {
+      this.capacity = 1300;
+      this.amount = amount || 1300;
       
       base.reset.apply(this, arguments);
     }
@@ -82,9 +82,9 @@ var CrewDragonFuelTank = FuelTank.extend(function(base) {
 var Falcon9FuelTank = FuelTank.extend(function(base) {
   return {
 
-    reset: function() {
+    reset: function(amount) {
       this.capacity = 409000;
-      this.amount = 6000;
+      this.amount = amount || 6000;
       
       base.reset.apply(this, arguments);
     }

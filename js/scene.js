@@ -8,11 +8,23 @@ var Scene = Events.extend(function(base) {
       base.init.apply(this, arguments);
 
       this.renderer = new Renderer(this, $('#canvas'));
-      this.world = new World(this);
+      this.world = new Mars(this);
 
       this.game.bind('render', with_scope(this, this.render));
       
       base.init.apply(this, arguments);
+    },
+
+    set_planet: function(planet) {
+      
+      if(planet == 'mars')
+        this.world = new Mars(this);
+      else if(planet == 'moon')
+        this.world = new Moon(this);
+      else
+        this.world = new Earth(this);
+
+      console.log(this.world);
     },
 
     add_vehicle: function(v) {

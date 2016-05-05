@@ -66,7 +66,13 @@ var Renderer = Events.extend(function(base) {
       cc.lineTo(this.size[0], this.size[1]);
       cc.lineTo(-this.size[0], this.size[1]);
 
-      cc.fillStyle = '#8d8';
+      if(this.scene.world.name == 'earth')
+        cc.fillStyle = '#8d8';
+      else if(this.scene.world.name == 'mars')
+        cc.fillStyle = '#d97';
+      if(this.scene.world.name == 'moon')
+        cc.fillStyle = '#ddd';
+      
       cc.fill();
       
       
@@ -90,7 +96,7 @@ var Renderer = Events.extend(function(base) {
       var factor = 0.5;
 
       var color = 'red';
-      var grav = this.scene.world.gravity;
+      var grav = 9.81;
 
       for(var i=1; i<8; i++) {
         var f2 = 0;
@@ -234,7 +240,7 @@ var Renderer = Events.extend(function(base) {
 
       if(target) {
         this.draw_hud_speed(target);
-//        this.draw_hud_acceleration(target);
+        // this.draw_hud_acceleration(target);
 
         var values = [];
         var debug = this.game.input.debug;
@@ -285,7 +291,7 @@ var Renderer = Events.extend(function(base) {
 
           values.push([
             'G-FORCE',
-            rnd(distance_2d(target.get_acceleration()) / this.scene.world.gravity, 2) + 'G (' + rnd(distance_2d(target.get_peak_acceleration()) / this.scene.world.gravity, 2) + 'G)'
+            rnd(distance_2d(target.get_acceleration()) / 9.81, 2) + 'G (' + rnd(distance_2d(target.get_peak_acceleration()) / 9.81, 2) + 'G)'
           ]);
 
         }

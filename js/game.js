@@ -63,21 +63,39 @@ var Game = Events.extend(function(base) {
             
             {
               type: 'crew-dragon',
-              position: [0, 1000],
-              angle: radians(-20)
+              position: [0, 3000],
+              angle: radians(-5)
             }
             
           ]
         },
-       
-        'crew-dragon-sightseeing': {
-          name: 'Crew Dragon Sightseeing',
+        
+        /*
+        'red-dragon-entry': {
+          name: 'Red Dragon entry',
+          planet: 'mars',
           vehicles: [
             
             {
-              type: 'crew-dragon',
-              position: [0, 1000],
-              angle: radians(60)
+              type: 'red-dragon',
+              position: [0, 15000],
+              angle: radians(-82),
+              speed: -7000
+            }
+            
+          ]
+        },
+        */
+       
+        'red-dragon-hoverslam': {
+          name: 'Red Dragon Hoverslam',
+          planet: 'mars',
+          vehicles: [
+            
+            {
+              type: 'red-dragon',
+              position: [0, 3000],
+              angle: radians(-60)
             }
             
           ]
@@ -147,7 +165,7 @@ var Game = Events.extend(function(base) {
     },
 
     switch_scenario: function(s) {
-      if(!(s in this.scenarios)) return;
+      if(!(s in this.scenarios)) s = 'crew-dragon-hoverslam';
       
       this.scenario = this.scenarios[s];
 
@@ -192,6 +210,8 @@ var Game = Events.extend(function(base) {
       
       this.vehicles = [];
 
+      this.scene.set_planet(this.scenario.planet);
+
       for(i=0; i<this.scenario.vehicles.length; i++) {
         var v = this.scenario.vehicles[i];
 
@@ -201,6 +221,8 @@ var Game = Events.extend(function(base) {
           vehicle = new Falcon9Vehicle(this, new HoverslamAutopilotInput(this));
         else if(v.type == 'crew-dragon')
           vehicle = new CrewDragonVehicle(this, new HoverslamAutopilotInput(this));
+        else if(v.type == 'red-dragon')
+          vehicle = new RedDragonVehicle(this, new HoverslamAutopilotInput(this));
         
         vehicle.reset({
           position: v.position,

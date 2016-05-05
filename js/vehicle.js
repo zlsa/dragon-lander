@@ -4,7 +4,8 @@ var Vehicle = Events.extend(function(base) {
 
     init: function(game, autopilot) {
       this.game = game;
-      this.world = game.scene.world;
+
+      this.scene = game.scene;
       
       this.autopilot = autopilot;
 
@@ -70,12 +71,16 @@ var Vehicle = Events.extend(function(base) {
       var angle = get_object(options, 'angle', 0);
       var speed = get_object(options, 'speed', null);
       
-      if(speed == null && position[1] != 0)
-        speed = -this.get_terminal_velocity(position[1]);
+      if(speed == null) {
+        if(position[1] != 0)
+          speed = -this.get_terminal_velocity(position[1]);
+        else
+          speed = 0;
+      }
 
       this.body.velocity[0] = Math.sin(angle) * speed;
       this.body.velocity[1] = Math.cos(angle) * speed;
-      
+
       this.body.angle = -angle;
       this.body.angularVelocity = 0;
 
@@ -111,11 +116,21 @@ var Vehicle = Events.extend(function(base) {
         damping: 0.0
       });
       
+      this.scene.world.world.addContactMaterial(new p2.ContactMaterial(this.material, this.scene.world.material, {
+        friction: 1,
+        restitution: 0,
+        stiffness: 10e5
+      }));
+      
     },
 
     get_terminal_velocity: function(altitude) {
-      return Math.sqrt((2 * this.get_mass() * this.world.gravity) /
-                       (this.world.get_pressure([0, altitude]) * this.aero.area * this.aero.cd.bottom));
+      var terminal_velocity = Math.sqrt(
+        (2 * this.get_mass() * this.scene.world.gravity) /
+        (this.scene.world.get_pressure([0, altitude]) * this.aero.area * this.aero.cd.bottom)
+      );
+      if(terminal_velocity > 10000) return 10000;
+      return terminal_velocity;
     },
 
     get_thrust: function(max) {
@@ -206,8 +221,10 @@ var Vehicle = Events.extend(function(base) {
     },
 
     get_drag: function(angle, velocity) {
-      var density = this.world.scene.world.get_pressure(this.get_position());
-      var dynf = (density * 0.5) * Math.pow(distance_2d(velocity) / 9.81, 2);
+      if(density < 0.001) return 0;
+      
+      var density = this.scene.world.get_pressure(this.get_position());
+      var dynf = (density * 0.5) * Math.pow(distance_2d(velocity), 2);
 
       var v_rot = Math.atan2(velocity[0], velocity[1]);
       var v_vec = angle_between(v_rot, angle);
@@ -215,22 +232,25 @@ var Vehicle = Events.extend(function(base) {
       this.v_vec = v_vec;
 
       var area = this.aero.area;
+      
       var cd = clerp(0, Math.abs(v_vec), Math.PI, this.aero.cd.top, this.aero.cd.bottom);
       cd = clerp(0, Math.PI * 0.5 + Math.abs(v_vec), Math.PI * 0.5, this.aero.cd.side, cd);
-      
+
       return dynf * area * cd;
     },
     
-    update_drag: function() {
+    update_drag: function(elapsed) {
       var drag_s = this.get_drag(-this.body.angle, this.get_velocity());
+
+      if(drag_s == 0) return;
 
       var cop = this.aero.cop;
 
-      this.drag = drag_s;
+      this.drag = drag_s * elapsed;
 
       var drag = [
-        drag_s * -this.get_velocity()[0],
-        drag_s * -this.get_velocity()[1]
+        this.drag * -this.get_velocity()[0],
+        this.drag * -this.get_velocity()[1]
       ];
       
       this.body.applyForce(drag, [
@@ -243,7 +263,7 @@ var Vehicle = Events.extend(function(base) {
     
     pre_physics: function(elapsed) {
 
-      this.update_drag();
+      this.update_drag(elapsed);
 
       this.last_velocity = [this.body.velocity[0], this.body.velocity[1]];
       
@@ -263,10 +283,10 @@ var Vehicle = Events.extend(function(base) {
 
       var acceleration = [
         (this.last_velocity[0] - this.velocity[0]) / elapsed,
-        (this.last_velocity[1] - this.velocity[1]) / elapsed - this.world.gravity
+        (this.last_velocity[1] - this.velocity[1]) / elapsed - this.scene.world.gravity
       ];
 
-      if(this.get_speed() < 0.04) acceleration = [0, -this.world.gravity];
+      if(this.get_speed() < 0.04) acceleration = [0, -this.scene.world.gravity];
 
       var damp = 0.1;
       
@@ -319,7 +339,7 @@ var CrewDragonVehicle = Vehicle.extend(function(base) {
         cd: {
           top: 0.8,
           side: 100,
-          bottom: 1.1
+          bottom: 0.8
         }
       };
 
@@ -355,6 +375,7 @@ var CrewDragonVehicle = Vehicle.extend(function(base) {
       for(var i=0; i<this.body.shapes.length; i++) {
         this.body.shapes[i].material = this.material;
       }
+      
     },
 
     init_images: function() {
@@ -487,6 +508,20 @@ var CrewDragonVehicle = Vehicle.extend(function(base) {
   };
 });
 
+var RedDragonVehicle = CrewDragonVehicle.extend(function(base) {
+  return {
+
+    init: function() {
+      base.init.apply(this, arguments);
+      
+      this.vehicle_type = 'red-dragon';
+
+      this.mass = 6500;
+    },
+
+  };
+});
+
 var Falcon9Vehicle = Vehicle.extend(function(base) {
   return {
 
@@ -599,12 +634,6 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
       // this.init_gear(-1);
       // this.init_gear(1);
 
-      this.world.world.addContactMaterial(new p2.ContactMaterial(this.material, this.world.material, {
-        friction: 10,
-        restitution: 0,
-        stiffness: 10e5
-      }));
-      
     },
 
     init_gear: function(side) {
