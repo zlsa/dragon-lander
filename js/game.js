@@ -92,7 +92,7 @@ var Game = Events.extend(function(base) {
               engines: 1,
               position: [0, 2000],
               speed: null,
-              angle: radians(-10)
+              angle: radians(-5)
             }
             
           ]
@@ -107,7 +107,7 @@ var Game = Events.extend(function(base) {
               engines: 3,
               position: [0, 2000],
               speed: null,
-              angle: radians(-10)
+              angle: radians(-5)
             }
             
           ]

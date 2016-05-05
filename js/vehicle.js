@@ -102,13 +102,15 @@ var Vehicle = Events.extend(function(base) {
     },
     
     init_body: function() {
-
+      this.material = new p2.Material();
+      
       var altitude = 0;
       
       this.body = new p2.Body({
         mass: this.mass,
         damping: 0.0
       });
+      
     },
 
     get_terminal_velocity: function(altitude) {
@@ -349,6 +351,10 @@ var CrewDragonVehicle = Vehicle.extend(function(base) {
       ];
       
       this.body.fromPolygon(vertices);
+
+      for(var i=0; i<this.body.shapes.length; i++) {
+        this.body.shapes[i].material = this.material;
+      }
     },
 
     init_images: function() {
@@ -493,7 +499,7 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
       
       this.mass = 24500;
 
-      this.leg_mass = 300;
+      this.leg_mass = 5000;
 
       this.mass -= this.leg_mass * 2;
 
@@ -502,8 +508,8 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
         cop: 30,
         cd: {
           top: 0.8,
-          side: 1,
-          bottom: 1.5
+          side: 2,
+          bottom: 0.4
         }
       };
 
@@ -536,8 +542,8 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
     add_to_world: function(world) {
       var w = world.world;
       
-      w.addBody(this.gear_bodies[0]);
-      w.addBody(this.gear_bodies[1]);
+      // w.addBody(this.gear_bodies[0]);
+      // w.addBody(this.gear_bodies[1]);
 
       for(var i=0; i<this.gear_constraints.length; i++) {
         w.addConstraint(this.gear_constraints[i]);
@@ -547,7 +553,7 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
         var c = this.gear_locks[i];
         for(var j=0; j<c.equations.length; j++) {
           c.equations[j].stiffness = 1e10;
-          c.equations[j].relaxation = 10;
+          c.equations[j].relaxation = 5;
         }
       }
       
@@ -566,9 +572,8 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
         w.removeSpring(this.gear_springs[i]);
       }
       
-      w.removeBody(this.gear_bodies[0]);
-      w.removeBody(this.gear_bodies[1]);
-      
+      // w.removeBody(this.gear_bodies[0]);
+      // w.removeBody(this.gear_bodies[1]);
     },
 
     get_thrust: function(max) {
@@ -591,8 +596,15 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
       this.gear_locks = [];
       this.gear_springs = [];
 
-      this.init_gear(-1);
-      this.init_gear(1);
+      // this.init_gear(-1);
+      // this.init_gear(1);
+
+      this.world.world.addContactMaterial(new p2.ContactMaterial(this.material, this.world.material, {
+        friction: 10,
+        restitution: 0,
+        stiffness: 10e5
+      }));
+      
     },
 
     init_gear: function(side) {
@@ -616,12 +628,16 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
       
       body.fromPolygon(vertices);
       
+      for(var i=0; i<this.body.shapes.length; i++) {
+        body.shapes[i].material = this.material;
+      }
+      
       this.gear_bodies.push(body);
 
       this.gear_constraints.push(new p2.RevoluteConstraint(this.body, body, {
         localPivotA: [side * rad/2, -18],
         localPivotB: [side * rad/2, 2],
-        maxForce: this.mass * 1500,
+        maxForce: this.mass * 10e10,
         collideConnected: false
       }));
 
@@ -629,7 +645,7 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
         distance: 10,
         localAnchorA: [0, -18],
         localAnchorB: [side * span/2, 0],
-        maxForce: this.mass * 300,
+        maxForce: this.mass * 10e5,
         collideConnected: false
       });
       
@@ -637,17 +653,15 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
       
       this.gear_constraints.push(distance);
       
-      var lock = new p2.LockConstraint(this.body, body, {
-        localOffsetB: [side * rad/2, -20],
-        localAngleB: 0,
-        maxForce: this.mass * 300,
+      var lock = new p2.RevoluteConstraint(this.body, body, {
+        worldPivot: [100 * side, 100],
+        maxForce: this.mass * 10e2,
         collideConnected: false
       });
       
-      this.gear_locks.push(lock);
+      // this.gear_locks.push(lock);
       
-      this.gear_constraints.push(lock);
-      
+      // this.gear_constraints.push(lock);
     },
     
     get_mass: function() {
@@ -657,18 +671,27 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
     init_shapes: function() {
       var size = 3.62;
       var height = 42;
+      var gear_span = 10;
+      var gear_height = 6;
 
       size *= 0.5;
       height *= 0.5;
+      gear_span *= 0.5;
       
       var vertices = [
         [-size, height],
         [-size, -height],
+        [-gear_span, -height - gear_height],
+        [gear_span, -height - gear_height],
         [size, -height],
         [size, height]
       ];
       
       this.body.fromPolygon(vertices);
+      
+      for(var i=0; i<this.body.shapes.length; i++) {
+        this.body.shapes[i].material = this.material;
+      }
     },
 
     init_images: function() {
@@ -819,23 +842,26 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
       
       for(i=0; i<this.gear_pistons.length; i++) {
         this.gear_pistons[i].distance = clerp(0, this.gear.get(this.time), 1, 0.5, 4.5);
+        this.gear_pistons[i].distance = 4.5;
       }
 
       for(var i=0; i<this.gear_constraints.length; i++) {
         var c = this.gear_constraints[i];
+        
         for(var j=0; j<c.equations.length; j++) {
-          c.equations[j].stiffness = clerp(0, this.gear.get(this.time), 1, 1e10, 1e300);
+          // c.equations[j].stiffness = clerp(0, this.gear.get(this.time), 1, 1e1, 1e300);
         }
+        
       }
       
       for(i=0; i<this.gear_bodies.length; i++) {
-        this.gear_bodies[i].mass = clerp(0.95, this.gear.get(this.time), 1, 1, this.leg_mass);
+        this.gear_bodies[i].mass = clerp(0.0, this.gear.get(this.time), 1, this.leg_mass * 0.001, this.leg_mass);
         this.gear_bodies[i].updateMassProperties();
       }
       
       for(i=0; i<this.gear_locks.length; i++) {
-        this.gear_locks[i].setMaxForce(clerp(0.95, this.gear.get(this.time), 1, 0, this.mass * 800));
-        this.gear_pistons[i].setMaxForce(clerp(0.93, this.gear.get(this.time), 0.95, this.mass * 300, 0));
+        // this.gear_locks[i].setMaxForce(clerp(0.95, this.gear.get(this.time), 1, 0, this.mass * 500));
+        // this.gear_pistons[i].setMaxForce(this.mass * 10e30);
       }
       
       base.pre_physics.apply(this, arguments);

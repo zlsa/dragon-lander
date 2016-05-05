@@ -12,12 +12,14 @@ var World = Events.extend(function(base) {
         broadphase: new p2.SAPBroadphase()
       });
 
-      this.world.solver.iterations = 100;
+      this.world.solver.iterations = 300;
 
       this.init_ground();
 
-      this.world.setGlobalStiffness(1e20);
-      this.world.setGlobalRelaxation(10);
+      this.world.setGlobalStiffness(1e15);
+      this.world.setGlobalRelaxation(30);
+
+      this.material = new p2.Material();
       
       base.init.apply(this, arguments);
     },

@@ -27,7 +27,13 @@ var AutopilotInput = Input.extend(function(base) {
         altitude: 10
       };
 
+      this.state_time = this.vehicle.game.get_time();
+      
       base.reset.apply(this, arguments);
+    },
+
+    state_elapsed: function() {
+      return this.vehicle.game.get_time() - this.state_time;
     },
 
     has_state: function(s) {
@@ -61,6 +67,7 @@ var AutopilotInput = Input.extend(function(base) {
     },
 
     next_state: function() {
+      this.state_time = this.vehicle.game.get_time();
       this.state += 1;
     },
 
@@ -209,13 +216,14 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
       this.new_pid('hoverslam', 0.1, 0.3);
       this.pids.hoverslam.limits = [0, 1];
       
-      this.new_pid('hspeed', 0.1);
-      var limit = radians(40);
+      this.new_pid('hspeed', 0.4);
+      var limit = radians(20);
       this.pids.hspeed.limits = [-limit, limit];
       
       this.new_pid('angle', 1, 0.05, 0.05, radians(15));
       limit = radians(20);
       this.pids.angle.limits = [-limit, limit];
+      
       this.new_pid('gimbal', 0.05, 0.1);
       this.pids.gimbal.limits = [-1, 1];
       
@@ -224,11 +232,16 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
       this.add_state('landing');
       this.add_state('shutdown');
 
+      this.hover = {
+        altitude: 0,
+      };
+
       this.hoverslam = {
         altitude: 0,
         distance: 1,
         time: 0
       };
+      
     },
 
     calc_hoverslam: function() {
@@ -239,7 +252,7 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
       if(this.vehicle.get_velocity()[1] > 0) return;
 
       var vspeed = this.vehicle.get_velocity()[1] || 100;
-      var alt = 0;
+      var alt = -this.hover.altitude;
 
       var step = 0.01;
       
@@ -273,7 +286,7 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
       var altitude = this.vehicle.get_altitude();
       var rest_altitude = this.vehicle.get_rest_altitude();
       var twr = this.vehicle.get_twr(true);
-      var landing_vspeed = lerp(rest_altitude + 1, altitude, rest_altitude, lerp(1, twr - 1, 5, -1, -3), 0.1);
+      var landing_vspeed = lerp(rest_altitude + 1, altitude, rest_altitude, lerp(1, twr - 1, 5, -1, -1.2), 0.1);
       altitude -= rest_altitude;
 
       this.calc_hoverslam();
@@ -329,11 +342,15 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
         console.log('landing time: ' + rnd(this.hoverslam.time, 2));
       }
       
-      if(altitude < 2 && this.is_state('hoverslam')) {
+      if(altitude < this.hover.altitude + 1 && this.is_state('hoverslam')) {
         this.next_state();
       }
 
-      if((altitude < 0.01 || this.vehicle.get_velocity()[1] > -1) && this.is_state('landing')) {
+      if(this.vehicle.get_speed()[1] > -1 && this.is_state('hoverslam')) {
+        this.next_state();
+      }
+
+      if((altitude < 0.01 || this.vehicle.get_velocity()[1] > -0.2) && this.is_state('landing')) {
         this.next_state();
       }
 

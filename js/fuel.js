@@ -84,7 +84,7 @@ var Falcon9FuelTank = FuelTank.extend(function(base) {
 
     reset: function() {
       this.capacity = 409000;
-      this.amount = 10000;
+      this.amount = 6000;
       
       base.reset.apply(this, arguments);
     }
