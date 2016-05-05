@@ -257,7 +257,7 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
       if(this.vehicle.get_velocity()[1] > 0) return;
 
       var vspeed = this.vehicle.get_velocity()[1] || 100;
-      var alt = -this.hover.altitude * 0.2;
+      var alt = -this.hover.altitude * 0.3;
 
       var step = 0.01;
       
@@ -291,7 +291,7 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
       var altitude = this.vehicle.get_altitude();
       var rest_altitude = this.vehicle.get_rest_altitude();
       var twr = this.vehicle.get_twr(true);
-      var landing_vspeed = lerp(rest_altitude + 1, altitude, rest_altitude, lerp(1, twr - 1, 5, -0.5, -0.7), 0.1);
+      var landing_vspeed = lerp(rest_altitude + 1, altitude, rest_altitude, lerp(1, twr - 1, 5, -0.5, -0.51), 0.1);
       altitude -= rest_altitude;
 
       this.calc_hoverslam();
@@ -321,15 +321,15 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
 
       this.pids.angle.set_measure(-this.vehicle.body.angle);
 
-      this.pids.angle.set_target(clerp(0.1, this.hoverslam.time, 0.2, 0, retrograde));
+      this.pids.angle.set_target(clerp(0.05, this.hoverslam.time, 0.1, 0, retrograde));
 
       this.pids.gimbal.set_measure(-this.vehicle.body.angularVelocity);
       
       var ang_vel_fac = 1;
-      // if(this.vehicle.vehicle_type == 'crew-dragon') ang_vel_fac *= 50;
-      // if(this.vehicle.vehicle_type == 'red-dragon') ang_vel_fac *= 50;
+      if(this.vehicle.vehicle_type == 'crew-dragon') ang_vel_fac *= 2;
+      if(this.vehicle.vehicle_type == 'red-dragon') ang_vel_fac *= 5;
 
-      ang_vel_fac *= clerp(0, distance_2d(this.vehicle.get_velocity()), 300, 1, 15);
+      ang_vel_fac *= clerp(0, this.vehicle.get_speed(), 300, 1, 5);
       
       this.pids.gimbal.set_target(this.pids.angle.get() * ang_vel_fac);
 
@@ -387,6 +387,13 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
         time_until_start = this.hoverslam.time;
       
       this.value = time_str(time_until_start, true) + ' (' + distance_str(this.hoverslam.distance) + ')';
+      
+      var time_scale = Math.pow(2, Math.round(clerp(0, this.vehicle.get_altitude(), 15000, 1, 3)));
+
+      if(this.throttle) time_scale = 1;
+      
+      // this.game.time_scale = time_scale;
+
     }
 
   };

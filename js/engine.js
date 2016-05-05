@@ -149,7 +149,7 @@ var Merlin1DEngine = Engine.extend(function(base) {
       base.init.apply(this, arguments);
 
       this.performance = {
-        thrust: 756000,
+        thrust: 845000,
         isp: 282,
         throttle_min: 0.5,
         throttle_max: 1,

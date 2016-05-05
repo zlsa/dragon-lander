@@ -224,7 +224,7 @@ var Vehicle = Events.extend(function(base) {
       if(density < 0.001) return 0;
       
       var density = this.scene.world.get_pressure(this.get_position());
-      var dynf = (density * 0.5) * Math.pow(distance_2d(velocity), 2);
+      var dynf = (density * 0.5) * Math.pow(distance_2d(velocity), 2) * 0.7;
 
       var v_rot = Math.atan2(velocity[0], velocity[1]);
       var v_vec = angle_between(v_rot, angle);
@@ -534,10 +534,6 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
       
       this.mass = 24500;
 
-      this.leg_mass = 5000;
-
-      this.mass -= this.leg_mass * 2;
-
       this.aero = {
         area: 11,
         cop: 30,
@@ -574,41 +570,10 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
       
       base.reset.apply(this, arguments);
     },
-    add_to_world: function(world) {
-      var w = world.world;
-      
-      // w.addBody(this.gear_bodies[0]);
-      // w.addBody(this.gear_bodies[1]);
-
-      for(var i=0; i<this.gear_constraints.length; i++) {
-        w.addConstraint(this.gear_constraints[i]);
-      }
-      
-      for(var i=0; i<this.gear_locks.length; i++) {
-        var c = this.gear_locks[i];
-        for(var j=0; j<c.equations.length; j++) {
-          c.equations[j].stiffness = 1e10;
-          c.equations[j].relaxation = 5;
-        }
-      }
-      
-      base.add_to_world.apply(this, arguments);
-    },
 
     destroy: function() {
       var w = this.game.scene.world.world;
       base.destroy.apply(this, arguments);
-      
-      for(var i=0; i<this.gear_constraints.length; i++) {
-        w.removeConstraint(this.gear_constraints[i]);
-      }
-      
-      for(i=0; i<this.gear_springs.length; i++) {
-        w.removeSpring(this.gear_springs[i]);
-      }
-      
-      // w.removeBody(this.gear_bodies[0]);
-      // w.removeBody(this.gear_bodies[1]);
     },
 
     get_thrust: function(max) {
@@ -624,75 +589,8 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
 
     init_body: function() {
       base.init_body.apply(this, arguments);
-
-      this.gear_bodies = [];
-      this.gear_pistons = [];
-      this.gear_constraints = [];
-      this.gear_locks = [];
-      this.gear_springs = [];
-
-      // this.init_gear(-1);
-      // this.init_gear(1);
-
     },
 
-    init_gear: function(side) {
-      
-      var span = 8;
-      var rad = 3.62/2;
-      
-      var vertices = [
-        [side * (rad), 4],
-        [side * (span/2), 1],
-        [side * (span/2), 0],
-        [side * (rad), 3]
-      ];
-
-      var body = new p2.Body({
-        mass: this.leg_mass,
-        position: [0, 5],
-        damping: 0.1,
-        angularDamping: 0.1
-      });
-      
-      body.fromPolygon(vertices);
-      
-      for(var i=0; i<this.body.shapes.length; i++) {
-        body.shapes[i].material = this.material;
-      }
-      
-      this.gear_bodies.push(body);
-
-      this.gear_constraints.push(new p2.RevoluteConstraint(this.body, body, {
-        localPivotA: [side * rad/2, -18],
-        localPivotB: [side * rad/2, 2],
-        maxForce: this.mass * 10e10,
-        collideConnected: false
-      }));
-
-      var distance = new p2.DistanceConstraint(this.body, body, {
-        distance: 10,
-        localAnchorA: [0, -18],
-        localAnchorB: [side * span/2, 0],
-        maxForce: this.mass * 10e5,
-        collideConnected: false
-      });
-      
-      this.gear_pistons.push(distance);
-      
-      this.gear_constraints.push(distance);
-      
-      var lock = new p2.RevoluteConstraint(this.body, body, {
-        worldPivot: [100 * side, 100],
-        maxForce: this.mass * 10e2,
-        collideConnected: false
-      });
-      
-      // this.gear_locks.push(lock);
-      
-      // this.gear_constraints.push(lock);
-    },
-    
     get_mass: function() {
       return this.body.mass + 0;
     },
@@ -816,9 +714,9 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
     ////////////////////////
 
     draw_engines: function(renderer) {
+      this.draw_engine(renderer, this.engines[1], true);
       this.draw_engine(renderer, this.engines[0]);
       this.draw_engine(renderer, this.engines[2]);
-      this.draw_engine(renderer, this.engines[1], true);
     },
     
     draw_engine: function(renderer, engine, center) {
@@ -867,30 +765,6 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
       for(i=0; i<forces.length; i++) {
         var ef = forces[i];
         this.body.applyForceLocal(ef[0], ef[1]);
-      }
-      
-      for(i=0; i<this.gear_pistons.length; i++) {
-        this.gear_pistons[i].distance = clerp(0, this.gear.get(this.time), 1, 0.5, 4.5);
-        this.gear_pistons[i].distance = 4.5;
-      }
-
-      for(var i=0; i<this.gear_constraints.length; i++) {
-        var c = this.gear_constraints[i];
-        
-        for(var j=0; j<c.equations.length; j++) {
-          // c.equations[j].stiffness = clerp(0, this.gear.get(this.time), 1, 1e1, 1e300);
-        }
-        
-      }
-      
-      for(i=0; i<this.gear_bodies.length; i++) {
-        this.gear_bodies[i].mass = clerp(0.0, this.gear.get(this.time), 1, this.leg_mass * 0.001, this.leg_mass);
-        this.gear_bodies[i].updateMassProperties();
-      }
-      
-      for(i=0; i<this.gear_locks.length; i++) {
-        // this.gear_locks[i].setMaxForce(clerp(0.95, this.gear.get(this.time), 1, 0, this.mass * 500));
-        // this.gear_pistons[i].setMaxForce(this.mass * 10e30);
       }
       
       base.pre_physics.apply(this, arguments);

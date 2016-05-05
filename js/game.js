@@ -108,7 +108,7 @@ var Game = Events.extend(function(base) {
             {
               type: 'falcon-9',
               engines: 1,
-              position: [0, 2000],
+              position: [0, 4000],
               speed: null,
               angle: radians(-5)
             }
