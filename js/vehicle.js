@@ -101,8 +101,8 @@ var Vehicle = Events.extend(function(base) {
       this.gear_set(get_object(options, 'gear', gear));
     },
 
-    get_twr: function(max) {
-      var thrust = this.get_thrust(max);
+    get_twr: function(max, thrust) {
+      thrust = thrust || this.get_thrust(max);
       return thrust / this.get_mass() / 9.81;
     },
     
@@ -560,17 +560,18 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
       this.engines = [];
 
       this.engines.push(new Merlin1DEngine(this, this.tank, [0, -18]));
-      this.engines.push(new Merlin1DEngine(this, this.tank, [-1.3, -18]));
-      this.engines.push(new Merlin1DEngine(this, this.tank, [1.3, -18]));
 
-      this.engines.push(new Merlin1DEngine(this, this.tank, [-1.3, -18]));
-      this.engines.push(new Merlin1DEngine(this, this.tank, [1.3, -18]));
-
-      this.engines.push(new Merlin1DEngine(this, this.tank, [-1.6, -18]));
-      this.engines.push(new Merlin1DEngine(this, this.tank, [1.6, -18]));
+      this.engines.push(new Merlin1DEngine(this, this.tank, [-2.4, -18]));
+      this.engines.push(new Merlin1DEngine(this, this.tank, [2.4, -18]));
       
-      this.engines.push(new Merlin1DEngine(this, this.tank, [-1.6, -18]));
-      this.engines.push(new Merlin1DEngine(this, this.tank, [1.6, -18]));
+      this.engines.push(new Merlin1DEngine(this, this.tank, [-2.4, -18]));
+      this.engines.push(new Merlin1DEngine(this, this.tank, [2.4, -18]));
+
+      this.engines.push(new Merlin1DEngine(this, this.tank, [-1.3, -18]));
+      this.engines.push(new Merlin1DEngine(this, this.tank, [1.3, -18]));
+
+      this.engines.push(new Merlin1DEngine(this, this.tank, [-1.3, -18]));
+      this.engines.push(new Merlin1DEngine(this, this.tank, [1.3, -18]));
 
       this.engine_number_matrix = [
         [],
@@ -607,8 +608,11 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
 
     get_thrust: function(max) {
       var thrust = 0;
-      for(var i=0; i<this.engines.length; i++)
+      
+      for(var i=0; i<this.engines.length; i++) {
         thrust += this.engines[i].get_thrust(max);
+      }
+      
       return thrust;
     },
 

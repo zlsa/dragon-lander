@@ -240,7 +240,7 @@ var Renderer = Events.extend(function(base) {
 
       if(target) {
         this.draw_hud_speed(target);
-        this.draw_hud_acceleration(target);
+        // this.draw_hud_acceleration(target);
 
         var values = [];
         var debug = this.game.input.debug;

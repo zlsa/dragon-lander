@@ -135,6 +135,21 @@ var Game = Events.extend(function(base) {
             }
             
           ]
+        },
+        
+        'f9-hoverslam-9-engine': {
+          name: 'Falcon 9 Hoverslam (9 engine)',
+          vehicles: [
+            
+            {
+              type: 'falcon-9',
+              engines: 9,
+              autopilot: 'hoverslam',
+              position: [0, 2000],
+              angle: radians(-5)
+            }
+            
+          ]
         }
         
       };

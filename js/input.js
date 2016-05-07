@@ -1,5 +1,16 @@
 
 var K = {
+  0: 48,
+  1: 49,
+  2: 50,
+  3: 51,
+  4: 52,
+  5: 53,
+  6: 54,
+  7: 55,
+  8: 56,
+  9: 57,
+  
   A: 65,
   B: 66,
   C: 67,
@@ -85,6 +96,8 @@ var UserInput = Input.extend(function(base) {
 
       this.trigger_switch = 0;
 
+      this.engine_number = 1;
+
       $(window).keydown(with_scope(this, this.keydown));
       $(window).keyup(with_scope(this, this.keyup));
     },
@@ -97,6 +110,7 @@ var UserInput = Input.extend(function(base) {
       base.apply_vehicle.apply(this, arguments);
       
       vehicle.set_gimbal(this.gimbal);
+      vehicle.engine_number = this.engine_number;
     },
 
     keydown: function(e) {
@@ -125,6 +139,13 @@ var UserInput = Input.extend(function(base) {
 
       if(this.get_key(K.G) == 1) {
         this.gear = !this.gear;
+      }
+
+      for(var i=0; i<10; i++) {
+        if(this.get_key(K[i]) == 1) {
+          if(this.engine_number != i) console.log(i);
+          this.engine_number = i;
+        }
       }
          
       if(this.get_key(K.R) == 1) {

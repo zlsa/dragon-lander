@@ -110,7 +110,7 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
       this.new_pid('vspeed', 0.15, 0.03, 0, 0.5);
       this.pids.vspeed.limits = [0, 1];
       
-      this.new_pid('hoverslam', 0.7, 0.1, 0.01);
+      this.new_pid('hoverslam', 0.4, 0.1, 0.5);
       this.pids.hoverslam.limits = [0, 1];
       
       this.new_pid('hspeed', 0.4);
@@ -130,8 +130,8 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
       this.add_state('shutdown');
 
       this.hover = {
-        altitude: 10,
-        engine_single: 2
+        altitude: 0,
+        engine_single: 1
       };
 
       if(this.vehicle.vehicle_type == 'crew-dragon') 
@@ -148,7 +148,7 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
     },
 
     calc_hoverslam: function() {
-      var twr = (this.vehicle.get_twr(true) || 1000);
+      var twr = (this.vehicle.get_twr(true, this.vehicle.engines[0].get_thrust(true)) || 1000);
 
       if(this.vehicle.vehicle_type == 'crew-dragon') twr = Math.min(2.5, twr); // don't want to smush the delicate people
 
@@ -166,7 +166,8 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
       var i=0, t;
       while(vspeed < 0) {
         t = twr;
-        if(this.hoverslam.time < this.hover.engine_single && this.vehicle.engine_number == 3) t = twr / 3;
+        
+        if(this.hoverslam.time > (this.hover.engine_single + 0.5) && this.vehicle.engine_number >= 1) t = twr * this.vehicle.engine_number;
         
         t *= 0.9;
         
@@ -197,13 +198,15 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
       var landing_vspeed = lerp(rest_altitude + 1, altitude, rest_altitude, lerp(1, twr - 1, 5, -0.5, -0.51), 0.1);
       altitude -= rest_altitude;
 
+      var throttle = 0;
+
       this.calc_hoverslam();
         
       this.pids.vspeed.set_measure(this.vehicle.get_velocity()[1]);
       this.pids.vspeed.set_target(landing_vspeed);
       
       if(this.is_state('landing')) {
-        this.throttle = this.pids.vspeed.get();
+        throttle = this.pids.vspeed.get();
       } else if(this.is_state('hoverslam')) {
       
         this.pids.hoverslam.set_measure(-clerp(0, this.vehicle.get_speed(), 1000, 0, 30));
@@ -213,7 +216,7 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
         
         this.pids.hoverslam.set_target(-this.hoverslam.distance * factor);
         
-        this.throttle = this.pids.hoverslam.get();
+        throttle = this.pids.hoverslam.get();
       }
 
       var vel = this.vehicle.get_velocity();
@@ -267,13 +270,15 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
         this.next_state();
       }
 
-      if(this.vehicle.engine_number == 3 && this.hoverslam.time < this.hover.engine_single && this.is_state('hoverslam')) {
+      if(this.vehicle.engine_number >= 1 && this.hoverslam.time < this.hover.engine_single && this.is_state('hoverslam')) {
         this.vehicle.engine_number = 1;
       }
 
       if((altitude < 0.01 || this.vehicle.get_velocity()[1] > -0.5) && this.is_state('landing')) {
         this.next_state();
       }
+
+      this.throttle += (throttle - this.throttle) / (0.5 / elapsed);
 
       if(this.is_state('coast')) {
         this.throttle = 0;
@@ -288,7 +293,7 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
         this.throttle = 0;
       }
 
-      if(this.hoverslam.time < this.vehicle.gear.duration && !this.gear && !this.is_state('coast')) {
+      if(this.hoverslam.time < this.vehicle.gear.duration * 1.2 && !this.gear && !this.is_state('coast')) {
         this.gear = true;
       }
       
