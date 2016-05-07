@@ -94,14 +94,14 @@ var HopAutopilotInput = AutopilotInput.extend(function(base) {
     },
 
     tick: function(elapsed) {
-      this.throttle = 0.2;
-      this.gimbal = 1;
+      this.throttle = 0;
+      this.gimbal = 0;
     }
 
   };
 });
 
-var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
+var Falcon9HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
   return {
 
     reset: function() {
@@ -112,16 +112,16 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
       
       this.new_pid('hoverslam', 0.4, 0.1, 0.5);
       this.pids.hoverslam.limits = [0, 1];
-      
-      this.new_pid('hspeed', 0.4);
-      var limit = radians(20);
+
+      this.new_pid('hspeed', 1 / 90);
+      var limit = radians(15);
       this.pids.hspeed.limits = [-limit, limit];
       
-      this.new_pid('angle', 1, 0.05, 0.05, radians(15));
+      this.new_pid('angle', 0.5, 0.01, 0.05, radians(30));
       limit = radians(20);
       this.pids.angle.limits = [-limit, limit];
       
-      this.new_pid('gimbal', 0.05, 0.02);
+      this.new_pid('gimbal', 3, 0.02);
       this.pids.gimbal.limits = [-1, 1];
       
       this.add_state('coast');
@@ -225,26 +225,21 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
       this.pids.hspeed.set_measure(this.vehicle.get_velocity()[0]);
       this.pids.hspeed.set_target(0);
 
-      var hspeed = this.pids.hspeed.get() * 0.05;
-      hspeed = clerp(100, altitude, 300, 0, hspeed);
+      var hspeed = this.pids.hspeed.get();
 
       this.pids.angle.set_measure(0);
-      this.pids.angle.set_target(angle_between(
-        clerp(400, altitude, 500, hspeed, retrograde * 1.05),
-       -this.vehicle.body.angle));
 
+      angle_target = clerp(3000, altitude, 5000, hspeed, retrograde)
+      
+      this.pids.angle.set_target(clerp(100, altitude, 300, this.vehicle.body.angle,
+                                       angle_between(angle_target, -this.vehicle.body.angle)));
+      
       this.pids.gimbal.set_measure(-this.vehicle.body.angularVelocity);
-      
-      var ang_vel_fac = 1;
-      if(this.vehicle.vehicle_type == 'crew-dragon') ang_vel_fac *= 2;
-      if(this.vehicle.vehicle_type == 'red-dragon') ang_vel_fac *= 5;
-      if(this.vehicle.vehicle_type == 'falcon-9') ang_vel_fac *= 0.3;
 
-      ang_vel_fac *= clerp(0, this.vehicle.get_speed(), 300, 1, 5);
-      ang_vel_fac *= clerp(0, altitude, 500, 5, 1);
+      var en = clerp(1, this.vehicle.engine_number, 9, 1, 0.1);
       
-      this.pids.gimbal.set_target(this.pids.angle.get() * ang_vel_fac);
-
+      this.pids.gimbal.set_target(this.pids.angle.get() * clerp(0, altitude, 300, 2, 1) / en);
+      
       if(this.is_state('coast')) {
         this.pids.vspeed.ignore = true;
         this.pids.hoverslam.ignore = true;
@@ -297,8 +292,6 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
         this.gear = true;
       }
       
-      this.value = distance_str(this.hoverslam.distance);
-
       var time_until_start = this.hoverslam.distance/this.vehicle.get_speed();
 
       if(!this.is_state('coast'))
@@ -306,11 +299,13 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
       
       this.value = time_str(time_until_start, true) + ' (' + distance_str(this.hoverslam.distance) + ')';
       
-      var time_scale = Math.pow(2, Math.round(clerp(0, this.vehicle.get_altitude(), 15000, 1, 3)));
-
-      if(this.throttle) time_scale = 1;
+      // this.value = this.gimbal.toFixed(2);
       
-      // this.game.time_scale = time_scale;
+      var time_scale = clerp(0, this.vehicle.get_altitude(), 15000, 1, 15);
+
+      if(altitude < 100) time_scale = 1;
+      
+      // this.game.time_scale = Math.pow(2, Math.round(time_scale));
 
     }
 

@@ -135,7 +135,7 @@ var UserInput = Input.extend(function(base) {
 
     tick: function(elapsed) {
       var throttle = [0.8, 1.2];
-      var gimbal = 0.7;
+      var gimbal = 0.1;
 
       if(this.get_key(K.G) == 1) {
         this.gear = !this.gear;
@@ -185,7 +185,7 @@ var UserInput = Input.extend(function(base) {
       } else if(this.get_key(K.RIGHT)) {
         this.gimbal += elapsed * (1 / gimbal);
       } else {
-        this.gimbal *= clerp(0, elapsed, 1, 1, 0) * 0.1;
+        this.gimbal *= clerp(0, elapsed, 1, 1, 0) * 0.95;
       }
 
       if(this.get_key(K.X)) {

@@ -66,7 +66,7 @@ var Game = Events.extend(function(base) {
             
             {
               type: 'crew-dragon',
-              autopilot: 'hoverslam',
+              autopilot: 'hop',
               position: [0, 3000],
               angle: radians(-5)
             }
@@ -98,7 +98,7 @@ var Game = Events.extend(function(base) {
             
             {
               type: 'red-dragon',
-              autopilot: 'hoverslam',
+              autopilot: 'hop',
               position: [0, 3000],
               angle: radians(-60)
             }
@@ -114,9 +114,9 @@ var Game = Events.extend(function(base) {
               type: 'falcon-9',
               fuel: 6000,
               engines: 1,
-              autopilot: 'hoverslam',
+              autopilot: 'f9-hoverslam',
               position: [0, 6000],
-              angle: radians(-5)
+              angle: radians(-20)
             }
             
           ]
@@ -129,7 +129,7 @@ var Game = Events.extend(function(base) {
             {
               type: 'falcon-9',
               engines: 3,
-              autopilot: 'hoverslam',
+              autopilot: 'f9-hoverslam',
               position: [0, 2000],
               angle: radians(-5)
             }
@@ -137,14 +137,14 @@ var Game = Events.extend(function(base) {
           ]
         },
         
-        'f9-hoverslam-9-engine': {
-          name: 'Falcon 9 Hoverslam (9 engine)',
+        'f9-hoverslam-5-engine': {
+          name: 'Falcon 9 Hoverslam (5 engine)',
           vehicles: [
             
             {
               type: 'falcon-9',
-              engines: 9,
-              autopilot: 'hoverslam',
+              engines: 5,
+              autopilot: 'f9-hoverslam',
               position: [0, 2000],
               angle: radians(-5)
             }
@@ -172,6 +172,10 @@ var Game = Events.extend(function(base) {
 
       var scenario = this.restore('scenario', 'crew-dragon-hoverslam');
       
+      if(location.hash) {
+        scenario = location.hash.substr(1);
+      }
+      
       this.switch_scenario(scenario);
     },
 
@@ -187,6 +191,8 @@ var Game = Events.extend(function(base) {
 
     switch_scenario: function(s) {
       if(!(s in this.scenarios)) s = 'crew-dragon-hoverslam';
+      
+      location.hash = '#' + s;
       
       this.scenario = this.scenarios[s];
 
@@ -223,7 +229,7 @@ var Game = Events.extend(function(base) {
 
     reset: function() {
       
-      this.time_scale = 1;
+      // this.time_scale = 1;
       
       for(var i=0; i<this.vehicles.length; i++) {
         this.vehicles[i].destroy();
@@ -239,8 +245,8 @@ var Game = Events.extend(function(base) {
         var vehicle = null;
         var autopilot;
 
-        if(v.autopilot == 'hoverslam')
-          autopilot = new HoverslamAutopilotInput(this);
+        if(v.autopilot == 'f9-hoverslam')
+          autopilot = new Falcon9HoverslamAutopilotInput(this);
         else
           autopilot = new HopAutopilotInput(this);
         
