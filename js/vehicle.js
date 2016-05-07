@@ -554,11 +554,36 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
       };
 
       this.tank = new Falcon9FuelTank(this);
+
+      this.engine_number = 1;
+      
       this.engines = [];
 
-      this.engines.push(new Merlin1DEngine(this, this.tank, [-1.3, -18]));
       this.engines.push(new Merlin1DEngine(this, this.tank, [0, -18]));
+      this.engines.push(new Merlin1DEngine(this, this.tank, [-1.3, -18]));
       this.engines.push(new Merlin1DEngine(this, this.tank, [1.3, -18]));
+
+      this.engines.push(new Merlin1DEngine(this, this.tank, [-1.3, -18]));
+      this.engines.push(new Merlin1DEngine(this, this.tank, [1.3, -18]));
+
+      this.engines.push(new Merlin1DEngine(this, this.tank, [-1.6, -18]));
+      this.engines.push(new Merlin1DEngine(this, this.tank, [1.6, -18]));
+      
+      this.engines.push(new Merlin1DEngine(this, this.tank, [-1.6, -18]));
+      this.engines.push(new Merlin1DEngine(this, this.tank, [1.6, -18]));
+
+      this.engine_number_matrix = [
+        [],
+        [0],
+        [1, 2],
+        [0, 1, 2],
+        [1, 2, 5, 6],
+        [0, 1, 2, 5, 6],
+        [1, 2, 3, 4, 5, 6],
+        [0, 1, 2, 3, 4, 5, 6],
+        [1, 2, 3, 4, 5, 6, 7, 8],
+        [0, 1, 2, 3, 4, 5, 6, 7, 8]
+      ];
 
       base.init.apply(this, arguments);
 
@@ -568,13 +593,8 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
     reset: function(options) {
       options = options || {};
       
-      if('engines' in options){
-        if(options.engines == 1) {
-          this.engines[0].disabled = true;
-          this.engines[2].disabled = true;
-        } else if(options.engines == 2) {
-          this.engines[1].disabled = true;
-        }
+      if('engines' in options) {
+        this.engine_number = options.engines;
       }
       
       base.reset.apply(this, arguments);
@@ -719,9 +739,15 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
     ////////////////////////
 
     draw_engines: function(renderer) {
-      this.draw_engine(renderer, this.engines[1], true);
-      this.draw_engine(renderer, this.engines[0]);
+      this.draw_engine(renderer, this.engines[0], true);
+      this.draw_engine(renderer, this.engines[1]);
       this.draw_engine(renderer, this.engines[2]);
+      this.draw_engine(renderer, this.engines[3]);
+      this.draw_engine(renderer, this.engines[4]);
+      this.draw_engine(renderer, this.engines[5]);
+      this.draw_engine(renderer, this.engines[6]);
+      this.draw_engine(renderer, this.engines[7]);
+      this.draw_engine(renderer, this.engines[8]);
     },
     
     draw_engine: function(renderer, engine, center) {
@@ -751,6 +777,14 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
     ////////////////////////
 
     pre_physics: function(elapsed) {
+      for(var i=0; i<this.engines.length; i++) {
+        this.engines[i].disabled = true;
+      }
+      
+      for(var i=0; i<this.engine_number_matrix[this.engine_number].length; i++) {
+        this.engines[this.engine_number_matrix[this.engine_number][i]].disabled = false;
+      }
+      
       this.time += elapsed;
       
       var forces = [];

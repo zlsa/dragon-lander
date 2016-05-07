@@ -110,7 +110,7 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
       this.new_pid('vspeed', 0.15, 0.03, 0, 0.5);
       this.pids.vspeed.limits = [0, 1];
       
-      this.new_pid('hoverslam', 0.3, 0.1);
+      this.new_pid('hoverslam', 0.7, 0.1, 0.01);
       this.pids.hoverslam.limits = [0, 1];
       
       this.new_pid('hspeed', 0.4);
@@ -130,7 +130,8 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
       this.add_state('shutdown');
 
       this.hover = {
-        altitude: 0,
+        altitude: 10,
+        engine_single: 2
       };
 
       if(this.vehicle.vehicle_type == 'crew-dragon') 
@@ -147,7 +148,7 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
     },
 
     calc_hoverslam: function() {
-      var twr = (this.vehicle.get_twr(true) || 1000) * 0.9;
+      var twr = (this.vehicle.get_twr(true) || 1000);
 
       if(this.vehicle.vehicle_type == 'crew-dragon') twr = Math.min(2.5, twr); // don't want to smush the delicate people
 
@@ -162,9 +163,14 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
 
       var dragf;
       
-      var i=0;
+      var i=0, t;
       while(vspeed < 0) {
-        vspeed += ((twr - 1) * 9.81) * step;
+        t = twr;
+        if(this.hoverslam.time < this.hover.engine_single && this.vehicle.engine_number == 3) t = twr / 3;
+        
+        t *= 0.9;
+        
+        vspeed += ((t - 1) * 9.81) * step;
         // dragf = this.vehicle.get_drag(0, [0, vspeed]);
         // vspeed += dragf / this.vehicle.get_mass();
         alt += vspeed * step;
@@ -259,6 +265,10 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
 
       if(this.vehicle.get_velocity()[1] > -1 && this.is_state('hoverslam')) {
         this.next_state();
+      }
+
+      if(this.vehicle.engine_number == 3 && this.hoverslam.time < this.hover.engine_single && this.is_state('hoverslam')) {
+        this.vehicle.engine_number = 1;
       }
 
       if((altitude < 0.01 || this.vehicle.get_velocity()[1] > -0.5) && this.is_state('landing')) {
