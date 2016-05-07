@@ -5,7 +5,7 @@ var AutopilotInput = Input.extend(function(base) {
     init: function(game, vehicle) {
       this.vehicle = vehicle;
 
-      this.value = 'foo';
+      this.value = 'DEAD';
 
       setTimeout(with_scope(this, this.reset), 0);
       
@@ -28,7 +28,7 @@ var AutopilotInput = Input.extend(function(base) {
       };
 
       this.state_time = this.vehicle.game.get_time();
-      
+
       base.reset.apply(this, arguments);
     },
 
@@ -80,7 +80,7 @@ var AutopilotInput = Input.extend(function(base) {
   };
 });
 
-var HoverAutopilotInput = AutopilotInput.extend(function(base) {
+var HopAutopilotInput = AutopilotInput.extend(function(base) {
   return {
 
     init: function() {
@@ -89,116 +89,13 @@ var HoverAutopilotInput = AutopilotInput.extend(function(base) {
 
     reset: function() {
       base.reset.call(this);
-
-      this.new_pid('altitude', 0.5, 0.1, 0.01, 20);
-      this.new_pid('vspeed', 0.5, 0.1, 0, 0.5);
       
-      this.new_pid('range', 0.3, 0.01, 0, 1);
-      this.new_pid('hspeed', 0.2, 0.03, 0, radians(10));
-      var limit = radians(40);
-      this.pids.hspeed.limits = [-limit, limit];
-      
-      this.new_pid('angle', 4, 0.2, 0.1, radians(5));
-      limit = radians(40);
-      this.pids.angle.limits = [-limit, limit];
-      this.new_pid('gimbal', 0.6, 0.2);
-      
-      this.target = {
-        altitude: 50,
-        range: -1000
-      };
-
-      this.add_state('preidle');
-      this.add_state('liftoff');
-      this.add_state('hover');
-      this.add_state('translate');
-      this.add_state('descend');
-      this.add_state('landing');
-      this.add_state('shutdown');
-
-      if(this.vehicle) {
-        this.target.altitude = lerp(0, this.vehicle.extra, 5, 10, 20);
-        this.target.range = this.vehicle.extra * 12;
-      }
-      
+      this.add_state('coast');
     },
 
     tick: function(elapsed) {
-      var target_altitude = 0;
-      var target_range = this.vehicle.get_range();
-      var target_hspeed = 0;
-      
-      if(this.between_states_i('liftoff', 'translate')) {
-        target_altitude = this.target.altitude;
-      }
-
-      if(this.is_state('translate')) {
-        target_range = this.target.range;
-      }
-      
-      this.pids.altitude.set_measure(this.vehicle.get_altitude());
-      this.pids.altitude.set_target(target_altitude);
-      
-      this.pids.vspeed.set_measure(this.vehicle.get_velocity()[1]);
-      this.pids.vspeed.set_target(this.pids.altitude.get());
-
-      if(this.is_state('landing')) {
-        this.pids.vspeed.set_target(clerp(10, this.vehicle.get_altitude(), 2, -5, 0));
-      }
-      
-      this.pids.range.set_measure(this.vehicle.get_range());
-      this.pids.range.set_target(target_range);
-      
-      this.pids.hspeed.set_measure(this.vehicle.get_velocity()[0]);
-      this.pids.hspeed.set_target(this.pids.range.get());
-      
-      if(this.between_states_i('descend', 'landing')) {
-        this.pids.hspeed.set_target(0);
-      }
-      
-      this.pids.angle.set_measure(-this.vehicle.body.angle);
-      this.pids.angle.set_target(this.pids.hspeed.get());
-      
-      this.pids.gimbal.set_measure(-this.vehicle.body.angularVelocity);
-      this.pids.gimbal.set_target(this.pids.angle.get());
-      
-      base.tick.apply(this, arguments);
-
-      if(this.vehicle.time > 0.1 && this.is_state('preidle')) {
-        this.next_state();
-      }
-      
-      if(this.vehicle.get_altitude() > 2 && this.is_state('liftoff')) {
-        this.next_state();
-      }
-      
-      if(this.vehicle.get_altitude() > this.target.altitude && this.is_state('hover')) {
-        this.next_state();
-      }
-      
-      if(Math.abs(this.vehicle.get_range() - this.target.range) < 1.5 && 
-         Math.abs(this.vehicle.get_speed()) < 0.8 &&
-         this.is_state('translate')) {
-        this.next_state();
-      }
-      
-      if(this.vehicle.get_altitude() < 10 && this.is_state('descend')) {
-        this.next_state();
-      }
-      
-      if(this.vehicle.get_altitude() < 2.25 && this.is_state('landing')) {
-        this.next_state();
-      }
-      
-      if(this.between_states_i('liftoff', 'landing')) {
-        this.throttle = clamp(0, this.pids.vspeed.get(), 0.5);
-        this.gimbal = this.pids.gimbal.get();
-      } else {
-        this.throttle = 0;
-        this.gimbal = 0;
-      }
-
-      this.value = this.states[this.state];
+      this.throttle = 0.2;
+      this.gimbal = 1;
     }
 
   };
@@ -213,7 +110,7 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
       this.new_pid('vspeed', 0.15, 0.03, 0, 0.5);
       this.pids.vspeed.limits = [0, 1];
       
-      this.new_pid('hoverslam', 0.1, 0.3);
+      this.new_pid('hoverslam', 0.3, 0.1);
       this.pids.hoverslam.limits = [0, 1];
       
       this.new_pid('hspeed', 0.4);
@@ -224,7 +121,7 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
       limit = radians(20);
       this.pids.angle.limits = [-limit, limit];
       
-      this.new_pid('gimbal', 0.05, 0.1);
+      this.new_pid('gimbal', 0.05, 0.02);
       this.pids.gimbal.limits = [-1, 1];
       
       this.add_state('coast');
@@ -256,7 +153,7 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
 
       if(this.vehicle.get_velocity()[1] > 0) return;
 
-      var vspeed = this.vehicle.get_velocity()[1] || 100;
+      var vspeed = this.vehicle.get_velocity()[1] || 0;
       var alt = -this.hover.altitude * 0.3;
 
       var step = 0.01;
@@ -319,17 +216,23 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
       this.pids.hspeed.set_measure(this.vehicle.get_velocity()[0]);
       this.pids.hspeed.set_target(0);
 
-      this.pids.angle.set_measure(-this.vehicle.body.angle);
+      var hspeed = this.pids.hspeed.get() * 0.05;
+      hspeed = clerp(100, altitude, 300, 0, hspeed);
 
-      this.pids.angle.set_target(clerp(0.05, this.hoverslam.time, 0.1, 0, retrograde));
+      this.pids.angle.set_measure(0);
+      this.pids.angle.set_target(angle_between(
+        clerp(400, altitude, 500, hspeed, retrograde * 1.05),
+       -this.vehicle.body.angle));
 
       this.pids.gimbal.set_measure(-this.vehicle.body.angularVelocity);
       
       var ang_vel_fac = 1;
       if(this.vehicle.vehicle_type == 'crew-dragon') ang_vel_fac *= 2;
       if(this.vehicle.vehicle_type == 'red-dragon') ang_vel_fac *= 5;
+      if(this.vehicle.vehicle_type == 'falcon-9') ang_vel_fac *= 0.3;
 
       ang_vel_fac *= clerp(0, this.vehicle.get_speed(), 300, 1, 5);
+      ang_vel_fac *= clerp(0, altitude, 500, 5, 1);
       
       this.pids.gimbal.set_target(this.pids.angle.get() * ang_vel_fac);
 
@@ -375,7 +278,7 @@ var HoverslamAutopilotInput = AutopilotInput.extend(function(base) {
         this.throttle = 0;
       }
 
-      if(this.hoverslam.time < this.vehicle.gear.duration * 1.2 && !this.gear && !this.is_state('coast')) {
+      if(this.hoverslam.time < this.vehicle.gear.duration && !this.gear && !this.is_state('coast')) {
         this.gear = true;
       }
       

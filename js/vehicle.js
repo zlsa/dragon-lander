@@ -224,7 +224,7 @@ var Vehicle = Events.extend(function(base) {
       if(density < 0.001) return 0;
       
       var density = this.scene.world.get_pressure(this.get_position());
-      var dynf = (density * 0.5) * Math.pow(distance_2d(velocity), 2) * 0.7;
+      var dynf = (density * 0.5) * Math.pow(distance_2d(velocity), 2);
 
       var v_rot = Math.atan2(velocity[0], velocity[1]);
       var v_vec = angle_between(v_rot, angle);
@@ -232,8 +232,10 @@ var Vehicle = Events.extend(function(base) {
       this.v_vec = v_vec;
 
       var area = this.aero.area;
-      
-      var cd = clerp(0, Math.abs(v_vec), Math.PI, this.aero.cd.top, this.aero.cd.bottom);
+
+      var leg_cd = this.aero.cd.legs || 0;
+      leg_cd *= this.gear.get(this.time);
+      var cd = clerp(0, Math.abs(v_vec), Math.PI, this.aero.cd.top, this.aero.cd.bottom + leg_cd);
       cd = clerp(0, Math.PI * 0.5 + Math.abs(v_vec), Math.PI * 0.5, this.aero.cd.side, cd);
 
       return dynf * area * cd;
@@ -244,7 +246,10 @@ var Vehicle = Events.extend(function(base) {
 
       if(drag_s == 0) return;
 
-      var cop = this.aero.cop;
+      var leg_cop = this.aero.leg_cop;
+      leg_cop *= this.gear.get(this.time);
+
+      var cop = this.aero.cop + leg_cop;
 
       this.drag = drag_s * elapsed;
 
@@ -336,10 +341,12 @@ var CrewDragonVehicle = Vehicle.extend(function(base) {
       this.aero = {
         area: 11,
         cop: 2,
+        leg_cop: 0,
         cd: {
           top: 0.8,
           side: 100,
-          bottom: 0.8
+          bottom: 0.8,
+          leg: 0
         }
       };
 
@@ -532,15 +539,17 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
 
       this.image_center = [64, 200];
       
-      this.mass = 24500;
+      this.mass = 24000;
 
       this.aero = {
         area: 11,
         cop: 30,
+        leg_cop: -50,
         cd: {
           top: 0.8,
           side: 2,
-          bottom: 0.4
+          bottom: 0.4,
+          leg: 0.5
         }
       };
 
@@ -589,10 +598,6 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
 
     init_body: function() {
       base.init_body.apply(this, arguments);
-    },
-
-    get_mass: function() {
-      return this.body.mass + 0;
     },
 
     init_shapes: function() {
@@ -728,10 +733,10 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
       var offset = 100;
       cc.translate(this.image_size[0]/2 * this.image_factor, 466 + offset);
       
-//      cc.rotate(-engine.get_gimbal_angle());
-      
-      cc.translate(-this.image_size[0]/2 * this.image_factor, 0 - offset);
       cc.translate(renderer.m_to_px(engine.position[0]), 0);
+      cc.rotate(-engine.get_gimbal_angle());
+      cc.translate(-this.image_size[0]/2 * this.image_factor, 0 - offset);
+      
       if(center)
         cc.translate(0, 2);
       draw_image(cc, this.images['engine'].data, this.image_size, this.image_factor);

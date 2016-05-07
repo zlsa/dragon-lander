@@ -38,6 +38,7 @@ var Game = Events.extend(function(base) {
             
             {
               type: 'crew-dragon',
+              autopilot: 'hop',
               position: [0, 0]
             }
             
@@ -50,6 +51,8 @@ var Game = Events.extend(function(base) {
             
             {
               type: 'falcon-9',
+              autopilot: 'hop',
+              fuel: 40000,
               engines: 1,
               position: [0, 0]
             }
@@ -63,6 +66,7 @@ var Game = Events.extend(function(base) {
             
             {
               type: 'crew-dragon',
+              autopilot: 'hoverslam',
               position: [0, 3000],
               angle: radians(-5)
             }
@@ -94,6 +98,7 @@ var Game = Events.extend(function(base) {
             
             {
               type: 'red-dragon',
+              autopilot: 'hoverslam',
               position: [0, 3000],
               angle: radians(-60)
             }
@@ -107,9 +112,10 @@ var Game = Events.extend(function(base) {
             
             {
               type: 'falcon-9',
+              fuel: 6000,
               engines: 1,
-              position: [0, 4000],
-              speed: null,
+              autopilot: 'hoverslam',
+              position: [0, 6000],
               angle: radians(-5)
             }
             
@@ -123,8 +129,8 @@ var Game = Events.extend(function(base) {
             {
               type: 'falcon-9',
               engines: 3,
+              autopilot: 'hoverslam',
               position: [0, 2000],
-              speed: null,
               angle: radians(-5)
             }
             
@@ -216,18 +222,25 @@ var Game = Events.extend(function(base) {
         var v = this.scenario.vehicles[i];
 
         var vehicle = null;
+        var autopilot;
+
+        if(v.autopilot == 'hoverslam')
+          autopilot = new HoverslamAutopilotInput(this);
+        else
+          autopilot = new HopAutopilotInput(this);
         
         if(v.type == 'falcon-9')
-          vehicle = new Falcon9Vehicle(this, new HoverslamAutopilotInput(this));
+          vehicle = new Falcon9Vehicle(this, autopilot);
         else if(v.type == 'crew-dragon')
-          vehicle = new CrewDragonVehicle(this, new HoverslamAutopilotInput(this));
+          vehicle = new CrewDragonVehicle(this, autopilot);
         else if(v.type == 'red-dragon')
-          vehicle = new RedDragonVehicle(this, new HoverslamAutopilotInput(this));
+          vehicle = new RedDragonVehicle(this, autopilot);
         
         vehicle.reset({
           position: v.position,
           angle: v.angle || 0,
           speed: v.speed || null,
+          fuel: v.fuel || 0,
           engines: v.engines || 1
         });
         

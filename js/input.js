@@ -96,7 +96,7 @@ var UserInput = Input.extend(function(base) {
     apply_vehicle: function(vehicle) {
       base.apply_vehicle.apply(this, arguments);
       
-      vehicle.set_gimbal(this.gimbal * 0.1);
+      vehicle.set_gimbal(this.gimbal);
     },
 
     keydown: function(e) {
@@ -121,7 +121,7 @@ var UserInput = Input.extend(function(base) {
 
     tick: function(elapsed) {
       var throttle = [0.8, 1.2];
-      var gimbal = 0.3;
+      var gimbal = 0.7;
 
       if(this.get_key(K.G) == 1) {
         this.gear = !this.gear;
@@ -164,7 +164,7 @@ var UserInput = Input.extend(function(base) {
       } else if(this.get_key(K.RIGHT)) {
         this.gimbal += elapsed * (1 / gimbal);
       } else {
-        this.gimbal *= clerp(0, elapsed, 1, 1, 0) * 0.3;
+        this.gimbal *= clerp(0, elapsed, 1, 1, 0) * 0.1;
       }
 
       if(this.get_key(K.X)) {

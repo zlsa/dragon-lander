@@ -24,7 +24,6 @@ var Scene = Events.extend(function(base) {
       else
         this.world = new Earth(this);
 
-      console.log(this.world);
     },
 
     add_vehicle: function(v) {
