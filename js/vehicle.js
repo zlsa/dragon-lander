@@ -708,6 +708,7 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
 
       this.draw_vehicle(r);
       this.draw_engines(r);
+      this.draw_legs(r);
 
       rcc.rotate(-this.body.angle);
       rcc.translate(-this.image_center[0], -this.image_center[1]);
@@ -723,10 +724,14 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
       var cc = this.context;
       canvas_clear(cc, this.image_size, this.image_factor);
 
-      cc.save();
-      
       draw_image(this.context, this.images['vehicle'].data, this.image_size, this.image_factor);
 
+    },
+
+    draw_legs: function() {
+      var cc = this.context;
+      cc.save();
+      
       this.draw_leg(this.gear.get(this.time));
       cc.scale(-1, 1);
       cc.translate(-this.image_size[0] * this.image_factor, 0);
