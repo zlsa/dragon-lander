@@ -57,8 +57,10 @@ var Input = Events.extend(function(base) {
 
       this.throttle = 0;
       this.gimbal = 0;
+      this.fin_gimbal = 0;
 
       this.gear = null;
+      this.fins = null;
 
       base.init.apply(this, arguments);
     },
@@ -69,13 +71,29 @@ var Input = Events.extend(function(base) {
         this.gear = vehicle.gear_get();
       }
       
+      if(this.fins == null && vehicle.fins) {
+        this.fins = vehicle.fins_get();
+      }
+      
       vehicle.gear_set(this.gear);
+
       vehicle.set_throttle(this.throttle);
       vehicle.set_gimbal(this.gimbal);
+      
+      if(vehicle.fins) {
+        vehicle.fins_set(this.fins);
+        vehicle.set_fin_gimbal(this.fin_gimbal);
+      }
+      
     },
 
     reset: function() {
       this.gear = null;
+      this.fins = null;
+      
+      this.throttle = 0;
+      this.gimbal = 0;
+      this.fin_gimbal = 0;
     }
 
   };
@@ -139,6 +157,10 @@ var UserInput = Input.extend(function(base) {
 
       if(this.get_key(K.G) == 1) {
         this.gear = !this.gear;
+      }
+
+      if(this.get_key(K.F) == 1) {
+        this.fins = !this.fins;
       }
 
       for(var i=0; i<10; i++) {

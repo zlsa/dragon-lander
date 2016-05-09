@@ -30,7 +30,7 @@ var Vehicle = Events.extend(function(base) {
 
       this.throttle = 0;
       this.gimbal = 0;
-
+      
       this.velocity = [0, 0];
       this.last_velocity = [0, 0];
 
@@ -97,7 +97,7 @@ var Vehicle = Events.extend(function(base) {
 
       var gear = false;
       if(speed > -10 || position[1] < 100) gear = true;
-      
+
       this.gear_set(get_object(options, 'gear', gear));
     },
 
@@ -127,7 +127,7 @@ var Vehicle = Events.extend(function(base) {
     get_terminal_velocity: function(altitude) {
       var terminal_velocity = Math.sqrt(
         (2 * this.get_mass() * this.scene.world.gravity) /
-        (this.scene.world.get_pressure([0, altitude]) * this.aero.area * this.aero.cd.bottom)
+        (this.scene.world.get_pressure([0, altitude]) * this.aero.area.ends * this.aero.cd.bottom)
       );
       if(terminal_velocity > 10000) return 10000;
       return terminal_velocity;
@@ -196,6 +196,8 @@ var Vehicle = Events.extend(function(base) {
       
     },
 
+    // gear functions
+
     gear_get: function() {
       if(this.gear.value == 0) return false;
       return true;
@@ -220,21 +222,27 @@ var Vehicle = Events.extend(function(base) {
       this.gear_set(0);
     },
 
-    get_drag: function(angle, velocity) {
-      if(density < 0.001) return 0;
-      
+    get_dynf: function(velocity) {
       var density = this.scene.world.get_pressure(this.get_position());
       var dynf = (density * 0.5) * Math.pow(distance_2d(velocity), 2);
+      return dynf;
+    },
+
+    get_drag: function(angle, velocity) {
+      // if(density < 0.001) return 0;
+
+      var dynf = this.get_dynf(velocity);
 
       var v_rot = Math.atan2(velocity[0], velocity[1]);
       var v_vec = angle_between(v_rot, angle);
 
       this.v_vec = v_vec;
 
-      var area = this.aero.area;
+      var area = this.aero.area.ends;
 
       var leg_cd = this.aero.cd.legs || 0;
       leg_cd *= this.gear.get(this.time);
+      
       var cd = clerp(0, Math.abs(v_vec), Math.PI, this.aero.cd.top, this.aero.cd.bottom + leg_cd);
       cd = clerp(0, Math.PI * 0.5 + Math.abs(v_vec), Math.PI * 0.5, this.aero.cd.side, cd);
 
@@ -339,7 +347,9 @@ var CrewDragonVehicle = Vehicle.extend(function(base) {
       this.mass = 7200;
 
       this.aero = {
-        area: 11,
+        area: {
+          ends: 11,
+        },
         cop: 2,
         leg_cop: 0,
         cd: {
@@ -542,14 +552,19 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
       this.mass = 24000;
 
       this.aero = {
-        area: 11,
+        area: {
+          ends: 11,
+          legs: 20,
+          fins: 4
+        },
         cop: 30,
-        leg_cop: -50,
+        leg_cop: -40,
         cd: {
           top: 0.8,
           side: 2,
           bottom: 0.4,
-          leg: 0.5
+          leg: 1.1,
+          fins: 0.4
         }
       };
 
@@ -586,6 +601,15 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
         [0, 1, 2, 3, 4, 5, 6, 7, 8]
       ];
 
+      this.fin_gimbal_command = 0;
+      this.fin_gimbal = 0;
+
+      this.fins = new Animation({
+        duration: 4
+      });
+
+      this.fins_retract();
+
       base.init.apply(this, arguments);
 
       this.gear.duration = 2;
@@ -599,11 +623,58 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
       }
       
       base.reset.apply(this, arguments);
+      
+      var fins = !this.gear_get();
+      
+      this.fins_set(get_object(options, 'fins', fins));
     },
 
     destroy: function() {
       var w = this.game.scene.world.world;
       base.destroy.apply(this, arguments);
+    },
+
+    set_gimbal: function(gimbal) {
+      this.gimbal = clamp(-1, gimbal, 1);
+    },
+
+    set_fin_gimbal: function(gimbal) {
+      this.fin_gimbal_command = clamp(-1, gimbal, 1);
+    },
+
+    // fins functions
+
+    fins_get: function() {
+      if(this.fins.value == 0) return false;
+      return true;
+    },
+    
+    fins_set: function(state) {
+      if(state) state = 1;
+      else state = 0;
+
+      this.fins.set(state, this.time);
+    },
+
+    fins_toggle: function() {
+      this.fins_set(!this.fins.end_value);
+    },
+    
+    fins_deploy: function() {
+      this.fins_set(1);
+    },
+    
+    fins_retract: function() {
+      this.fins_set(0);
+    },
+
+    get_drag: function(angle, velocity) {
+      var fin_drag = this.aero.cd.fins;
+      fin_drag *= this.fins.get(this.time);
+
+      fin_drag = this.get_dynf(velocity) * this.aero.area.fins * fin_drag;
+
+      return base.get_drag.call(this, angle, velocity) + fin_drag;
     },
 
     get_thrust: function(max) {
@@ -662,6 +733,14 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
         images.push('leg-' + lpad(i, 4));
       }
       
+      for(var i=0; i<=60; i++){
+        images.push('fin-toggle-' + lpad(i, 4));
+      }
+      
+      for(var i=0; i<=60; i++){
+        images.push('fin-travel-' + lpad(i, 4));
+      }
+      
       base.init_images.call(this, images);
     },
 
@@ -709,6 +788,7 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
       this.draw_vehicle(r);
       this.draw_engines(r);
       this.draw_legs(r);
+      this.draw_fins();
 
       rcc.rotate(-this.body.angle);
       rcc.translate(-this.image_center[0], -this.image_center[1]);
@@ -743,6 +823,21 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
     draw_leg: function(fraction) {
       var frame = lpad(rnd(clerp(0, fraction, 1, 0, 60)), 4);
       draw_image(this.context, this.images['leg-' + frame].data, this.image_size, this.image_factor);
+    },
+    
+    draw_fins: function() {
+      var fraction = this.fins.get(this.time);
+
+      var frame;
+      
+      if(fraction <= 0.5) {
+        frame = lpad(rnd(clerp(0, fraction, 0.5, 0, 60)), 4);
+        draw_image(this.context, this.images['fin-toggle-' + frame].data, this.image_size, this.image_factor);
+      } else {
+        var fin_gimbal = clerp(0.5, fraction, 1, 0, this.fin_gimbal);
+        frame = lpad(rnd(clerp(-1, fin_gimbal, 1, 0, 60)), 4);
+        draw_image(this.context, this.images['fin-travel-' + frame].data, this.image_size, this.image_factor);
+      }
     },
     
     ////////////////////////
@@ -783,6 +878,40 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
 
       cc.restore();
     },
+
+    update_fins: function(elapsed) {
+      var velocity = this.get_velocity();
+      
+      var dynf = this.get_dynf(velocity);
+
+      var v_rot = Math.atan2(velocity[0], velocity[1]);
+      var v_vec = angle_between(v_rot, -this.body.angle);
+
+      var fin_angle = radians(45);
+
+      var motion = angle_between(v_rot, -this.body.angle - (this.gimbal * fin_angle));
+
+      force = clerp(0, Math.abs(motion), Math.PI * 0.5, 0, 1);
+      force *= clerp(Math.PI * 0.5, Math.abs(motion), Math.PI, 1, 0);
+
+      var force = this.fin_gimbal * this.fins.get(this.time) * dynf * -3;
+      
+      this.body.applyForce([force, 0], [0, -20]);
+      // this.body.applyForce([-force, 0], [0, 20]);
+    },
+
+    update_aero: function(elapsed) {
+      var velocity = this.get_velocity();
+      var dynf = this.get_dynf(velocity);
+
+      var v_rot = Math.atan2(velocity[0], velocity[1]);
+      var v_vec = angle_between(v_rot, -this.body.angle);
+
+      var slide = v_vec * -1 * dynf;
+      
+      this.body.applyForce([slide, 0], [0, 0]);
+    },
+    
     ////////////////////////
 
     pre_physics: function(elapsed) {
@@ -814,6 +943,11 @@ var Falcon9Vehicle = Vehicle.extend(function(base) {
         var ef = forces[i];
         this.body.applyForceLocal(ef[0], ef[1]);
       }
+
+      this.fin_gimbal += (this.fin_gimbal_command - this.fin_gimbal) / (0.3 / elapsed);
+      
+      this.update_aero(elapsed);
+      this.update_fins(elapsed);
       
       base.pre_physics.apply(this, arguments);
     },

@@ -229,15 +229,15 @@ var Game = Events.extend(function(base) {
 
     reset: function() {
       
-      // this.time_scale = 1;
-      
       for(var i=0; i<this.vehicles.length; i++) {
         this.vehicles[i].destroy();
       }
       
-      this.vehicles = [];
-
       this.scene.set_planet(this.scenario.planet);
+
+      // this.time_scale = 1;
+      
+      this.vehicles = [];
 
       for(i=0; i<this.scenario.vehicles.length; i++) {
         var v = this.scenario.vehicles[i];
